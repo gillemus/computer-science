@@ -199,6 +199,36 @@ table.t td.inv{color:var(--muted)}
 .ctx p{margin:0;font-size:14px}
 .ctx .label{display:block;margin-bottom:2px}
 
+:root{--term-bg:#0F1720;--term-fg:#D7E3EE;--term-dim:#7F93A6;--term-ok:#7FD69B}
+.procgrid{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:18px}
+.acts{display:grid;gap:10px}
+.actrow{display:flex;flex-wrap:wrap;gap:8px;align-items:center}
+.actrow .who{font-family:var(--mono);font-size:12px;color:var(--muted);min-width:118px}
+.btn.suggest{border-color:var(--virt);box-shadow:0 0 0 2px var(--virt-soft)}
+.btn:disabled{opacity:.4;cursor:not-allowed}
+.btn:disabled:hover{border-color:var(--line)}
+.procs{display:grid;gap:8px}
+.pcard{border:1px solid var(--line);border-left:5px solid var(--sc);border-radius:8px;padding:10px 12px;display:grid;gap:2px;background:var(--surface)}
+.pcard.child{margin-left:28px;position:relative}
+.pcard.child::before{content:"└";position:absolute;left:-20px;top:8px;color:var(--muted);font-family:var(--mono)}
+.pcard b{font-family:var(--mono);font-size:15px}
+.pcard span{font-size:13px;color:var(--muted)}
+.pcard.new{animation:pop .4s ease-out}
+@keyframes pop{from{transform:scale(.96);opacity:.4}to{transform:none;opacity:1}}
+.term{background:var(--term-bg);color:var(--term-fg);font-family:var(--mono);font-size:13px;border-radius:8px;padding:12px 14px;min-height:150px;white-space:pre-wrap;line-height:1.55}
+.term .dim{color:var(--term-dim)}
+.term .ok{color:var(--term-ok)}
+.term .cur{display:inline-block;width:8px;height:15px;background:var(--term-fg);vertical-align:-2px;animation:blink 1s steps(1) infinite}
+@keyframes blink{50%{opacity:0}}
+.ccode{font-family:var(--mono);font-size:13px;background:var(--sunk);border-radius:8px;padding:10px 0;overflow-x:auto}
+.ccode div{display:grid;grid-template-columns:96px 1fr;padding:1px 12px;white-space:pre}
+.ccode div.on{background:var(--virt-soft)}
+.ccode .mk{display:flex;gap:4px}
+.ccode .mk i{font-style:normal;font-size:11px;padding:0 5px;border-radius:3px;background:var(--virt);color:var(--surface)}
+.ccode .mk i.c{background:var(--conc)}
+.explain{border-left:3px solid var(--virt);padding:4px 0 4px 12px;margin:0;max-width:70ch}
+@media (max-width:820px){.procgrid{grid-template-columns:1fr}}
+
 /* Repaso */
 .review{max-width:680px;margin:0 auto;display:grid;gap:16px}
 .review > .seg{justify-self:start}
@@ -287,8 +317,8 @@ const C = [
   r:["api-procesos","lde","planificacion"]},
  {id:"api-procesos",p:"virt",t:"API de procesos (fork, exec, wait)",ch:"5",crux:"¿Qué interfaz debe ofrecer el SO para crear y controlar procesos?",
   d:"En UNIX, fork() crea una copia casi idéntica del proceso que llama, exec() sustituye el programa actual por otro y wait() espera a que termine un hijo. Separar fork y exec permite a la shell redirigir la E/S entre ambas llamadas.",
-  k:["fork() devuelve 0 al hijo y el PID del hijo al padre","exec() no regresa si tiene éxito","La separación fork/exec hace posibles las tuberías y las redirecciones"],
-  r:["proceso","syscall"]},
+  k:["Al arrancar, el SO solo crea un proceso (init); todos los demás los pide otro proceso","Ejemplo: al escribir ls, la shell hace fork(), el hijo hace exec(ls) y la shell hace wait()","fork() devuelve 0 al hijo y el PID del hijo al padre","exec() no regresa si tiene éxito","La separación fork/exec hace posibles las tuberías y las redirecciones"],
+  r:["proceso","syscall"],lab:"proc"},
  {id:"lde",p:"virt",t:"Ejecución directa limitada",ch:"6",crux:"¿Cómo virtualizar la CPU de forma eficiente sin perder el control?",
   d:"El programa se ejecuta directamente sobre la CPU para ir rápido, pero en modo usuario. Las operaciones privilegiadas pasan por traps al núcleo, y una interrupción de temporizador devuelve el control al SO periódicamente.",
   k:["Modo usuario y modo núcleo","Tabla de traps configurada en el arranque","La interrupción de temporizador evita que un proceso se apodere de la CPU"],
@@ -464,8 +494,8 @@ const ACTS = [
  {id:"cpu",p:"virt",t:"Virtualizar la CPU",
   q:"Tenemos una sola CPU y queremos ejecutar muchos programas a la vez, como si cada uno tuviera la máquina para él solo.",
   steps:[
-  ["proceso","El SO crea la abstracción de proceso: un programa en ejecución con su propio estado, que se turna con los demás en la CPU.","Los programas necesitan una forma de crear otros procesos y de controlarlos."],
-  ["api-procesos","fork() copia el proceso, exec() cambia de programa y wait() espera al hijo. Con eso se construye la shell.","Para ir rápido, el proceso se ejecuta directamente en la CPU. Pero entonces podría hacer cualquier cosa y no devolver nunca el control al SO."],
+  ["proceso","El SO crea la abstracción de proceso: un programa en ejecución con su propio estado, que se turna con los demás en la CPU.","El SO sabe ejecutar procesos, pero al arrancar solo crea uno. Todos los demás los tiene que pedir otro proceso, como la shell cuando escribes una orden."],
+  ["api-procesos","fork() crea un clon del proceso, exec() convierte ese clon en otro programa y wait() hace que el padre espere a que termine. Así lanza la shell cada orden.","Para ir rápido, el proceso se ejecuta directamente en la CPU. Pero entonces podría hacer cualquier cosa y no devolver nunca el control al SO."],
   ["lde","Se ejecuta directamente, pero en modo usuario. Lo privilegiado se pide al núcleo y el temporizador interrumpe periódicamente.","Hace falta una puerta controlada por la que el proceso entre al núcleo sin poder saltar a donde quiera."],
   ["syscall","El trap salta a un manejador que el SO registró en el arranque; el proceso solo elige el número de llamada.","Cada vez que el SO recupera el control, por un trap o por el temporizador, puede elegir pasar a otro proceso. ¿Cómo se hace ese cambio?"],
   ["cambio-contexto","Se guardan los registros del proceso actual y se restauran los del siguiente.","Ya tenemos el mecanismo para cambiar de proceso. Falta la política: decidir a cuál."],
@@ -669,6 +699,7 @@ document.querySelector("nav.tabs").addEventListener("click",e=>{const b=e.target
 
 /* =================== LABORATORIO =================== */
 const LABS = {
+  proc:{p:"virt",t:"Shell: fork, exec y wait",s:"Crea, transforma y espera procesos",render:labProc},
   sched:{p:"virt",t:"Planificador de CPU",s:"FIFO · SJF · STCF · RR",render:labSched},
   paging:{p:"virt",t:"Traducción con paginación",s:"VPN, PFN y TLB",render:labPaging},
   repl:{p:"virt",t:"Reemplazo de páginas",s:"FIFO · LRU · Óptimo",render:labRepl},
@@ -687,6 +718,159 @@ function openLab(k,switchView=true){
   curLab=k; store.set("lab",k); renderLabNav();
   const host=$("#labhost"); host.innerHTML=""; LABS[k].render(host);
   if(switchView) showView("lab");
+}
+
+/* ---- Shell: fork, exec y wait ---- */
+function labProc(host){
+  const CMDS = {
+    "ls":{out:"notas.txt  p3.c  salida.txt", what:"lista los ficheros de la carpeta"},
+    "wc p3.c":{out:"  12   40  310 p3.c", what:"cuenta líneas, palabras y bytes de p3.c"},
+    "sleep 5":{out:"", what:"espera 5 segundos sin imprimir nada"}
+  };
+  const CODE = [
+    "leer_orden(orden);",
+    "pid = fork();",
+    "if (pid == 0) {",
+    "    execvp(orden);    // hijo",
+    "} else {",
+    "    wait(NULL);       // padre",
+    "}",
+    "mostrar_prompt();"
+  ];
+  const ST = {run:["ejecutándose","var(--good)"],ready:["listo para ejecutarse","var(--virt)"],sleep:["dormido en wait()","var(--muted)"],zombie:["terminado, sin recoger (zombi)","var(--bad)"]};
+  let cmd="ls", S;
+  function reset(){
+    S={procs:[{pid:100,ppid:1,prog:"bash",st:"run",pc:0,ret:null}],term:[{t:"prompt"}],msg:null,over:false,next:101,fresh:null};
+  }
+  reset();
+  host.innerHTML = `<div class="lab" style="${pc("virt")}">
+    <div><div class="label">Capítulo 5</div><h2>Shell: fork, exec y wait</h2></div>
+    <p class="intro">Haz de shell. Escribe una orden y lánzala con las tres llamadas al sistema. Pulsa <b>Siguiente paso</b> para seguir el camino correcto, o pulsa los botones en otro orden para ver qué falla. Prueba, por ejemplo, a hacer <span class="mono">exec()</span> sin <span class="mono">fork()</span>, o a seguir sin <span class="mono">wait()</span>.</p>
+    <div class="controls">
+      <div class="field"><label class="label" for="pcmd">Orden</label><select id="pcmd">${Object.keys(CMDS).map(c=>`<option>${c}</option>`).join("")}</select></div>
+      <button class="btn primary" id="pnext">Siguiente paso</button>
+      <button class="btn" id="preset">Reiniciar</button>
+    </div>
+    <p class="explain" id="pmsg" aria-live="polite"></p>
+    <div class="procgrid">
+      <div style="display:grid;gap:14px;align-content:start">
+        <div><div class="label" style="margin-bottom:6px">Acciones</div><div class="acts" id="pacts"></div></div>
+        <div><div class="label" style="margin-bottom:6px">Código de la shell</div><div class="ccode" id="pcode"></div></div>
+      </div>
+      <div style="display:grid;gap:14px;align-content:start">
+        <div><div class="label" style="margin-bottom:6px">Procesos</div><div class="procs" id="pprocs"></div></div>
+        <div><div class="label" style="margin-bottom:6px">Terminal</div><div class="term" id="pterm"></div></div>
+      </div>
+    </div>
+  </div>`;
+  const shell=()=>S.procs.find(x=>x.pid===100);
+  const child=()=>S.procs.find(x=>x.ppid===100);
+  const say=(html,kind)=>{S.msg={html,kind}};
+  const A = {
+    enter(){
+      const z=child();
+      const reaped = z ? `Antes de leer la nueva orden, bash recoge al hijo ${z.pid}, que estaba como zombi (en la realidad lo hace al recibir la señal SIGCHLD). ` : "";
+      if(z) S.procs=S.procs.filter(x=>x!==z);
+      S.term.pop(); S.term.push({t:"cmd",v:cmd}); shell().pc=1;
+      say(reaped+`La shell ha leído <b>${esc(cmd)}</b>, que ${CMDS[cmd].what}. Pero <span class="mono">${esc(cmd.split(" ")[0])}</span> es otro programa, y la shell tiene que seguir existiendo cuando termine. Necesita otro proceso: toca <span class="mono">fork()</span>.`);
+    },
+    fork(){
+      const sh=shell(), pid=S.next++;
+      S.procs.push({pid,ppid:100,prog:"bash",st:"ready",pc:3,ret:0}); S.fresh=pid;
+      sh.ret=pid; sh.pc=5;
+      say(`<span class="mono">fork()</span> ha creado el proceso <b>${pid}</b>, un clon exacto de bash: mismo código, copia de la memoria y mismos ficheros abiertos. Los dos siguen en la misma línea. Para distinguirse, <span class="mono">fork()</span> devolvió <b>${pid}</b> al padre y <b>0</b> al hijo, así que el padre va a la rama <span class="mono">else</span> y el hijo a la rama <span class="mono">if</span>. De momento hay dos shells y ningún ${esc(cmd.split(" ")[0])}.`);
+    },
+    childExec(){
+      const c=child(); c.prog=cmd; c.pc=null; c.ret=null; S.fresh=c.pid;
+      say(`El hijo ${c.pid} ha llamado a <span class="mono">exec("${esc(cmd)}")</span>. El SO ha sustituido su código y su memoria por los del programa <span class="mono">${esc(cmd.split(" ")[0])}</span>. <b>Sigue siendo el proceso ${c.pid}</b>, con el mismo PID y los mismos ficheros abiertos, pero ya no es bash. <span class="mono">exec()</span> no vuelve: el código que lo llamó ya no existe.`);
+    },
+    shellExec(){
+      const sh=shell(); sh.prog=cmd; sh.pc=null; sh.st="ready"; S.fresh=100;
+      say(`La shell ha hecho <span class="mono">exec("${esc(cmd)}")</span> ella misma, sin <span class="mono">fork()</span>. El proceso 100 ya no es bash, es ${esc(cmd.split(" ")[0])}. Pulsa <b>Ejecutar en la CPU</b> para ver qué pasa cuando termine.`,"err");
+    },
+    wait(){
+      const sh=shell(), c=child();
+      if(c.st==="zombie"){ S.procs=S.procs.filter(x=>x!==c); sh.pc=7; prompt(`<span class="mono">wait()</span> ha encontrado al hijo ${c.pid} ya terminado y lo ha recogido al instante. El SO libera sus recursos.`); return }
+      sh.st="sleep";
+      say(`La shell ha llamado a <span class="mono">wait()</span> y <b>se ha dormido</b>. No usa la CPU hasta que su hijo ${c.pid} termine. Así la terminal no mezcla el prompt con la salida de la orden.`);
+    },
+    nowait(){
+      const sh=shell(), c=child(); sh.pc=7;
+      prompt(`La shell ha seguido <b>sin esperar</b> y ya muestra el prompt mientras el hijo ${c.pid} sigue vivo. Es lo que hace <span class="mono">${esc(cmd)} &amp;</span> (segundo plano). Ejecuta ahora el hijo: su salida aparecerá después del prompt, y al terminar quedará como zombi porque nadie ha hecho <span class="mono">wait()</span>.`,"warn");
+    },
+    cpu(){
+      const x=S.procs.find(p=>p.prog!=="bash"&&p.st==="ready"); x.st="run";
+      const out=CMDS[x.prog].out;
+      if(out){
+        if(S.term.at(-1).t==="prompt"){ S.term.pop(); S.term.push({t:"cmd",v:""},{t:"out",v:out},{t:"prompt"}) }
+        else S.term.push({t:"out",v:out});
+      }
+      if(x.pid===100){
+        S.procs=[]; S.term=S.term.filter(l=>l.t!=="prompt"); S.term.push({t:"dead"}); S.over=true;
+        say(`${esc(cmd.split(" ")[0])} ha terminado y con él ha desaparecido el proceso 100. <b>Ya no queda ninguna shell</b>, así que la terminal se cierra. Por eso hace falta <span class="mono">fork()</span>: el clon es el que se transforma y la shell original sigue viva. Puedes comprobarlo escribiendo <span class="mono">exec ls</span> en una terminal real.`,"err");
+        return;
+      }
+      const sh=shell();
+      if(sh.st==="sleep"){
+        S.procs=S.procs.filter(p=>p!==x); sh.st="run"; sh.pc=7;
+        prompt(`${esc(cmd.split(" ")[0])} (proceso ${x.pid}) ${out?"ha impreso su resultado y ":""}ha terminado con estado 0. El SO <b>despierta a la shell</b>, <span class="mono">wait()</span> le devuelve ese estado y el proceso ${x.pid} desaparece. La shell vuelve a mostrar el prompt: el ciclo completo vuelve a empezar.`,"ok");
+      } else {
+        x.st="zombie";
+        say(`El proceso ${x.pid} ha terminado${out?", y su salida ha aparecido después del prompt":""}. Como su padre no ha llamado a <span class="mono">wait()</span>, el SO lo conserva como <b>zombi</b>: guarda su estado de salida hasta que alguien lo recoja. Escribe otra orden para ver cómo bash lo recoge.`,"warn");
+      }
+    }
+  };
+  function prompt(html,kind){ const sh=shell(); sh.pc=0; sh.ret=null; S.term.push({t:"prompt"}); say(html,kind) }
+  const can = () => {
+    const sh=shell(), c=child();
+    return {
+      enter: !S.over && sh && sh.prog==="bash" && sh.pc===0 && !(c && c.st!=="zombie"),
+      fork: !S.over && sh && sh.prog==="bash" && sh.pc===1,
+      shellExec: !S.over && sh && sh.prog==="bash" && sh.pc===1,
+      childExec: !S.over && c && c.prog==="bash",
+      wait: !S.over && sh && sh.pc===5 && sh.st==="run" && c && c.prog!=="bash",
+      nowait: !S.over && sh && sh.pc===5 && sh.st==="run" && c && c.prog!=="bash",
+      cpu: !S.over && S.procs.some(p=>p.prog!=="bash"&&p.st==="ready")
+    };
+  };
+  function suggestion(){
+    if(S.over) return "reset";
+    const k=can(), sh=shell(), c=child();
+    if(k.enter) return "enter"; if(k.fork) return "fork"; if(k.childExec) return "childExec";
+    if(k.wait) return "wait"; if(k.cpu) return "cpu"; return null;
+  }
+  function draw(){
+    const k=can(), sg=suggestion(), sh=shell(), c=child();
+    const b=(a,label,title)=>`<button class="btn small mono${sg===a?" suggest":""}" data-act="${a}" ${k[a]?"":"disabled"} title="${title}">${label}</button>`;
+    host.querySelector("#pacts").innerHTML = `
+      <div class="actrow"><span class="who">tú (teclado)</span>${b("enter",`escribir «${esc(cmd)}»`,"Escribe la orden en la terminal")}</div>
+      <div class="actrow"><span class="who">shell · PID 100</span>${b("fork","fork()","Crear un clon")}${b("shellExec",`exec("${esc(cmd.split(" ")[0])}")`,"La propia shell cambia de programa")}${b("wait","wait()","Dormir hasta que termine el hijo")}${b("nowait","seguir sin esperar","Mostrar el prompt sin wait()")}</div>
+      <div class="actrow"><span class="who">hijo${c?" · PID "+c.pid:""}</span>${b("childExec",`exec("${esc(cmd.split(" ")[0])}")`,"El hijo se convierte en la orden")}</div>
+      <div class="actrow"><span class="who">sistema operativo</span>${b("cpu","Ejecutar en la CPU","El planificador ejecuta el programa hasta que termina")}</div>`;
+    const marks=i=>{let m=""; if(sh&&sh.prog==="bash"&&sh.pc===i) m+=`<i>100</i>`; if(c&&c.prog==="bash"&&c.pc===i) m+=`<i class="c">${c.pid}</i>`; return m};
+    host.querySelector("#pcode").innerHTML = CODE.map((l,i)=>{const m=marks(i); return `<div class="${m?"on":""}"><span class="mk">${m}</span><span>${esc(l)}</span></div>`}).join("")
+      + (S.procs.some(p=>p.prog!=="bash")?`<div><span></span><span style="color:var(--muted);white-space:normal">Los procesos que han hecho exec() ya no ejecutan este código, sino el del programa nuevo.</span></div>`:"");
+    host.querySelector("#pprocs").innerHTML = S.procs.length ? S.procs.map(x=>{const st=ST[x.st];
+      return `<div class="pcard${x.ppid===100?" child":""}${S.fresh===x.pid?" new":""}" style="--sc:${st[1]}">
+        <b>PID ${x.pid} · ${esc(x.prog)}</b>
+        <span>${st[0]} · padre: ${x.ppid}${x.ret!==null?` · fork() devolvió <b class="mono" style="font-size:13px;color:var(--ink)">${x.ret}</b>`:""}</span></div>`}).join("")
+      : `<div class="result err">No queda ningún proceso en esta terminal.</div>`;
+    S.fresh=null;
+    host.querySelector("#pterm").innerHTML = S.term.map(l=>
+      l.t==="prompt"?`<span class="ok">usuario@ostep</span>:<span class="dim">~</span>$ <span class="cur"></span>`:
+      l.t==="cmd"?`<span class="ok">usuario@ostep</span>:<span class="dim">~</span>$ ${esc(l.v)}`:
+      l.t==="out"?esc(l.v):`<span class="dim">[proceso terminado: la terminal se ha cerrado]</span>`).join("\n");
+    const m=host.querySelector("#pmsg");
+    m.style.borderColor = S.msg?({err:"var(--bad)",warn:"var(--conc)",ok:"var(--good)"}[S.msg.kind]||"var(--virt)"):"var(--virt)";
+    m.innerHTML = S.msg ? S.msg.html : `Estás en una terminal con bash (PID 100) esperando una orden. Elige una y pulsa <b>Siguiente paso</b>, o empieza por <b>escribir</b> en la fila «tú (teclado)».`;
+    host.querySelector("#pnext").textContent = S.over?"Abrir otra terminal":"Siguiente paso";
+    host.querySelector("#pcmd").disabled = !(k.enter||S.over);
+  }
+  host.querySelector("#pacts").addEventListener("click",e=>{const b=e.target.closest("[data-act]"); if(b&&!b.disabled){A[b.dataset.act](); draw()}});
+  host.querySelector("#pnext").onclick=()=>{const a=suggestion(); if(a==="reset"){reset()} else if(a){A[a]()} draw()};
+  host.querySelector("#preset").onclick=()=>{reset(); draw()};
+  host.querySelector("#pcmd").onchange=e=>{cmd=e.target.value; draw()};
+  draw();
 }
 
 /* ---- Planificador ---- */
