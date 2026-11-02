@@ -1,0 +1,844 @@
+<title>Tres Piezas Fáciles</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,500;12..96,700;12..96,800&family=IBM+Plex+Sans:wght@400;500;600&family=JetBrains+Mono:wght@400;600&display=swap">
+<style>
+:root{
+  --bg:#EDF0F3; --surface:#FFFFFF; --sunk:#E2E7EC; --ink:#16202B; --muted:#5A6878; --line:#CBD3DC;
+  --virt:#0E7C74; --conc:#B4560B; --pers:#7B3FA8;
+  --virt-soft:#D5EEEB; --conc-soft:#F8E6D3; --pers-soft:#ECDDF6;
+  --good:#1F7A3A; --bad:#B42318; --good-soft:#DDF2E3; --bad-soft:#FBE2DF;
+  --display:"Bricolage Grotesque", "Segoe UI", system-ui, sans-serif;
+  --body:"IBM Plex Sans", "Segoe UI", system-ui, sans-serif;
+  --mono:"JetBrains Mono", ui-monospace, "SFMono-Regular", Menlo, monospace;
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){
+    color-scheme:dark;
+    --bg:#11161C; --surface:#1A212A; --sunk:#232C37; --ink:#E6EBF0; --muted:#97A4B3; --line:#33404E;
+    --virt:#3CC2B5; --conc:#F0964A; --pers:#BB8AE6;
+    --virt-soft:#173A38; --conc-soft:#3D2A17; --pers-soft:#33224A;
+    --good:#5CC97C; --bad:#F2796B; --good-soft:#18331F; --bad-soft:#3C1E1A;
+  }
+}
+:root[data-theme="dark"]{
+  color-scheme:dark;
+  --bg:#11161C; --surface:#1A212A; --sunk:#232C37; --ink:#E6EBF0; --muted:#97A4B3; --line:#33404E;
+  --virt:#3CC2B5; --conc:#F0964A; --pers:#BB8AE6;
+  --virt-soft:#173A38; --conc-soft:#3D2A17; --pers-soft:#33224A;
+  --good:#5CC97C; --bad:#F2796B; --good-soft:#18331F; --bad-soft:#3C1E1A;
+}
+*{box-sizing:border-box}
+body{background:var(--bg);color:var(--ink);font:15px/1.6 var(--body);padding-inline:16px;padding-block:0 48px}
+.wrap{max-width:1120px;margin:0 auto}
+h1,h2,h3{font-family:var(--display);text-wrap:balance;line-height:1.1;margin:0}
+button,input,select{font:inherit;color:inherit}
+:focus-visible{outline:2px solid var(--virt);outline-offset:2px}
+.mono{font-family:var(--mono)}
+.label{font-size:11px;letter-spacing:.09em;text-transform:uppercase;color:var(--muted);font-weight:600}
+
+/* Cabecera */
+header.top{padding-block:40px 24px;display:grid;gap:20px}
+header.top h1{font-size:clamp(38px,7vw,72px);font-weight:800;letter-spacing:-.02em}
+header.top h1 span{display:inline-block}
+header.top h1 .v{color:var(--virt)} header.top h1 .c{color:var(--conc)} header.top h1 .p{color:var(--pers)}
+header.top p{max-width:62ch;color:var(--muted);margin:0;font-size:16px}
+.pieces{display:grid;grid-template-columns:repeat(3,1fr);gap:12px}
+.piece{border:1px solid var(--line);background:var(--surface);border-radius:10px;padding:14px 16px;text-align:left;cursor:pointer;display:grid;gap:4px;transition:transform .15s,border-color .15s}
+.piece:hover{transform:translateY(-2px)}
+.piece[aria-pressed="true"]{border-color:var(--pc);box-shadow:inset 0 0 0 1px var(--pc)}
+.piece b{font-family:var(--display);font-size:20px;color:var(--pc)}
+.piece small{color:var(--muted);font-size:13px;line-height:1.4}
+.piece .ch{font-family:var(--mono);font-size:12px;color:var(--muted)}
+
+/* Pestañas */
+nav.tabs{position:sticky;top:env(safe-area-inset-top,0px);z-index:5;background:var(--bg);display:flex;gap:4px;padding-block:10px;border-bottom:1px solid var(--line);overflow-x:auto}
+nav.tabs button{border:0;background:none;padding:8px 14px;border-radius:999px;cursor:pointer;color:var(--muted);font-weight:600;white-space:nowrap}
+nav.tabs button[aria-selected="true"]{background:var(--ink);color:var(--bg)}
+section.view{padding-block:24px}
+
+/* Explorador */
+.toolbar{display:flex;flex-wrap:wrap;gap:10px;align-items:center;margin-bottom:16px}
+.toolbar input[type=search]{flex:1 1 240px;padding:10px 14px;border:1px solid var(--line);border-radius:8px;background:var(--surface)}
+.count{color:var(--muted);font-size:13px}
+.explorer{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1.15fr);gap:20px;align-items:start}
+.list{display:grid;gap:18px}
+.group h3{font-size:15px;display:flex;align-items:center;gap:8px;margin-bottom:8px;color:var(--pc)}
+.group h3::before{content:"";width:10px;height:10px;border-radius:2px;background:var(--pc)}
+.chips{display:flex;flex-wrap:wrap;gap:6px}
+.chip{border:1px solid var(--line);background:var(--surface);padding:6px 10px;border-radius:6px;cursor:pointer;font-size:14px;text-align:left}
+.chip:hover{border-color:var(--pc)}
+.chip[aria-current="true"]{background:var(--pc);border-color:var(--pc);color:var(--surface)}
+.chip.known::after{content:" ✓";color:var(--good)}
+.chip[aria-current="true"].known::after{color:inherit}
+.detail{position:sticky;top:calc(env(safe-area-inset-top,0px) + 70px);background:var(--surface);border:1px solid var(--line);border-top:4px solid var(--pc);border-radius:10px;padding:22px;display:grid;gap:14px}
+.detail h2{font-size:30px}
+.detail .meta{display:flex;flex-wrap:wrap;gap:8px;align-items:center}
+.tag{font-family:var(--mono);font-size:12px;padding:2px 8px;border-radius:4px;background:var(--pcs);color:var(--pc)}
+.crux{background:var(--sunk);border-radius:8px;padding:12px 14px;font-style:italic}
+.crux .label{font-style:normal;display:block;margin-bottom:4px}
+.detail p{margin:0}
+.detail ul{margin:0;padding-left:20px;display:grid;gap:4px}
+.related{display:flex;flex-wrap:wrap;gap:6px}
+.related button{border:1px dashed var(--line);background:none;border-radius:6px;padding:4px 8px;cursor:pointer;font-size:13px}
+.related button:hover{border-style:solid}
+.actions{display:flex;flex-wrap:wrap;gap:8px}
+.btn{border:1px solid var(--line);background:var(--surface);border-radius:8px;padding:8px 14px;cursor:pointer;font-weight:600}
+.btn:hover{border-color:var(--ink)}
+.btn.primary{background:var(--ink);color:var(--bg);border-color:var(--ink)}
+.btn.small{padding:5px 10px;font-size:13px}
+
+/* Laboratorio */
+.labnav{display:flex;flex-wrap:wrap;gap:8px;margin-bottom:18px}
+.labnav button{border:1px solid var(--line);background:var(--surface);border-radius:8px;padding:8px 12px;cursor:pointer;text-align:left;display:grid}
+.labnav button small{color:var(--muted);font-size:12px}
+.labnav button[aria-pressed="true"]{border-color:var(--pc);box-shadow:inset 0 0 0 1px var(--pc)}
+.lab{background:var(--surface);border:1px solid var(--line);border-radius:10px;padding:22px;display:grid;gap:18px}
+.lab h2{font-size:26px}
+.lab .intro{color:var(--muted);max-width:70ch;margin:0}
+.controls{display:flex;flex-wrap:wrap;gap:14px;align-items:end}
+.field{display:grid;gap:4px}
+.field input,.field select{padding:7px 10px;border:1px solid var(--line);border-radius:6px;background:var(--bg);min-width:0}
+.field input[type=number]{width:76px}
+.seg{display:inline-flex;border:1px solid var(--line);border-radius:8px;overflow:hidden}
+.seg button{border:0;background:var(--surface);padding:7px 12px;cursor:pointer;font-weight:600;border-right:1px solid var(--line)}
+.seg button:last-child{border-right:0}
+.seg button[aria-pressed="true"]{background:var(--ink);color:var(--bg)}
+.scroll{overflow-x:auto}
+.stats{display:flex;flex-wrap:wrap;gap:12px}
+.stat{background:var(--sunk);border-radius:8px;padding:10px 14px;min-width:120px}
+.stat b{display:block;font-family:var(--mono);font-size:22px;font-variant-numeric:tabular-nums}
+
+/* Gantt */
+.gantt{display:grid;gap:6px;min-width:520px}
+.grow{display:grid;grid-template-columns:44px 1fr;align-items:center;gap:8px}
+.gtrack{position:relative;height:28px;background:var(--sunk);border-radius:4px}
+.gcell{position:absolute;top:0;bottom:0;border-radius:3px;display:flex;align-items:center;justify-content:center;font-family:var(--mono);font-size:11px;color:#fff}
+.gaxis{position:relative;height:18px;font-family:var(--mono);font-size:11px;color:var(--muted)}
+.gaxis span{position:absolute;transform:translateX(-50%)}
+.jobs{display:grid;grid-template-columns:repeat(auto-fill,minmax(190px,1fr));gap:10px}
+.job{border:1px solid var(--line);border-radius:8px;padding:10px;display:flex;gap:10px;align-items:end}
+.job .sw{width:12px;height:36px;border-radius:3px;flex:none}
+.job .field input[type=number]{width:64px}
+
+/* Paginación */
+.bits{display:flex;flex-wrap:wrap;gap:3px;font-family:var(--mono)}
+.bit{width:28px;height:34px;display:flex;align-items:center;justify-content:center;border-radius:4px;font-weight:600}
+.bit.vpn{background:var(--virt-soft);color:var(--virt)}
+.bit.off{background:var(--sunk);color:var(--muted)}
+.bit.pfn{background:var(--pers-soft);color:var(--pers)}
+.twocol{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:20px}
+table.t{border-collapse:collapse;font-family:var(--mono);font-size:13px;width:100%;font-variant-numeric:tabular-nums}
+table.t th,table.t td{padding:5px 8px;border-bottom:1px solid var(--line);text-align:left}
+table.t th{font-family:var(--body);font-size:11px;letter-spacing:.06em;text-transform:uppercase;color:var(--muted)}
+table.t tr.hl td{background:var(--virt-soft);color:var(--virt);font-weight:600}
+table.t td.inv{color:var(--muted)}
+.result{padding:12px 14px;border-radius:8px;font-family:var(--mono)}
+.result.ok{background:var(--good-soft);color:var(--good)}
+.result.err{background:var(--bad-soft);color:var(--bad)}
+.steps{margin:0;padding-left:20px;display:grid;gap:4px}
+
+/* Carrera */
+.threads{display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px}
+.thread{border:1px solid var(--line);border-radius:8px;padding:12px;display:grid;gap:8px}
+.thread h3{font-size:16px}
+.code{font-family:var(--mono);font-size:13px;display:grid;gap:2px}
+.code div{padding:2px 6px;border-radius:4px}
+.code div.pc{background:var(--conc-soft);color:var(--conc);font-weight:600}
+.code div.pc::before{content:"▸ "}
+.mem{display:grid;place-items:center;gap:6px;border:1px dashed var(--line);border-radius:8px;padding:12px;text-align:center}
+.mem b{font-family:var(--mono);font-size:40px}
+.log{font-family:var(--mono);font-size:12px;max-height:140px;overflow:auto;background:var(--sunk);border-radius:8px;padding:8px 10px;color:var(--muted)}
+
+/* Reemplazo */
+.frames td.hit{color:var(--good);font-weight:600}
+.frames td.miss{color:var(--bad);font-weight:600}
+.bar{height:10px;background:var(--sunk);border-radius:5px;overflow:hidden}
+.bar i{display:block;height:100%;background:var(--virt)}
+.cmp{display:grid;gap:8px}
+.cmp div{display:grid;grid-template-columns:70px 1fr 64px;gap:10px;align-items:center;font-family:var(--mono);font-size:13px}
+
+/* Repaso */
+.review{max-width:680px;margin:0 auto;display:grid;gap:16px}
+.card{background:var(--surface);border:1px solid var(--line);border-top:4px solid var(--pc);border-radius:12px;padding:26px;display:grid;gap:14px;min-height:260px}
+.card .q{font-family:var(--display);font-size:24px;line-height:1.25}
+.progress{display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap}
+
+footer{color:var(--muted);font-size:13px;border-top:1px solid var(--line);padding-top:16px;margin-top:24px}
+footer a{color:inherit}
+
+@media (max-width:820px){
+  .explorer,.twocol{grid-template-columns:1fr}
+  .detail{position:static}
+  .threads{grid-template-columns:1fr}
+}
+@media (max-width:560px){
+  .pieces{grid-template-columns:1fr}
+}
+@media (prefers-reduced-motion:reduce){*{transition:none!important;animation:none!important}}
+</style>
+
+<div class="wrap">
+  <header class="top">
+    <div class="label">Operating Systems: Three Easy Pieces · Arpaci-Dusseau</div>
+    <h1><span class="v">Virtualización.</span> <span class="c">Concurrencia.</span> <span class="p">Persistencia.</span></h1>
+    <p>Los conceptos principales del libro de sistemas operativos que usa el currículo OSSU, organizados en sus tres piezas. Explora cada concepto, juega con los simuladores y repasa con tarjetas.</p>
+    <div class="pieces" id="pieces"></div>
+  </header>
+
+  <nav class="tabs" role="tablist" aria-label="Secciones">
+    <button role="tab" id="tab-explorar" aria-selected="true" data-view="explorar">Conceptos</button>
+    <button role="tab" id="tab-lab" aria-selected="false" data-view="lab">Laboratorio</button>
+    <button role="tab" id="tab-repaso" aria-selected="false" data-view="repaso">Repaso</button>
+  </nav>
+
+  <section class="view" id="view-explorar">
+    <div class="toolbar">
+      <input type="search" id="q" placeholder="Busca: TLB, semáforo, journaling, fork…" aria-label="Buscar concepto">
+      <span class="count" id="count"></span>
+    </div>
+    <div class="explorer">
+      <div class="list" id="list"></div>
+      <article class="detail" id="detail" aria-live="polite"></article>
+    </div>
+  </section>
+
+  <section class="view" id="view-lab" hidden>
+    <div class="labnav" id="labnav"></div>
+    <div id="labhost"></div>
+  </section>
+
+  <section class="view" id="view-repaso" hidden>
+    <div class="review" id="review"></div>
+  </section>
+
+  <footer>
+    Basado en <a href="https://pages.cs.wisc.edu/~remzi/OSTEP/" target="_blank" rel="noopener">OSTEP</a>, de Remzi y Andrea Arpaci-Dusseau (gratis en línea). Los números de capítulo siguen la edición web del libro. Guía del curso: <span class="mono">coursepages/ostep/README.md</span>.
+  </footer>
+</div>
+
+<script>
+const PIECES = {
+  virt:{name:"Virtualización", chapters:"Cap. 4–24", blurb:"Cómo el SO convierte una CPU y una memoria en muchas CPU y memorias virtuales."},
+  conc:{name:"Concurrencia", chapters:"Cap. 26–34", blurb:"Cómo coordinar varios hilos que comparten memoria sin corromper los datos."},
+  pers:{name:"Persistencia", chapters:"Cap. 36–51", blurb:"Cómo guardar datos de forma fiable en discos y SSD, incluso tras una caída."}
+};
+
+const C = [
+ // ---------- Virtualización ----------
+ {id:"proceso",p:"virt",t:"Proceso",ch:"4",crux:"¿Cómo da el SO la ilusión de tener casi infinitas CPU?",
+  d:"Un programa en ejecución. El SO lo representa con su espacio de direcciones, sus registros (incluidos PC y puntero de pila) y los ficheros abiertos, todo guardado en una estructura llamada PCB.",
+  k:["Estados: ejecutándose, listo y bloqueado","El SO guarda la información de cada proceso en la lista de procesos (PCB)","La compartición de CPU por tiempo es lo que crea la ilusión de virtualización"],
+  r:["api-procesos","lde","planificacion"]},
+ {id:"api-procesos",p:"virt",t:"API de procesos (fork, exec, wait)",ch:"5",crux:"¿Qué interfaz debe ofrecer el SO para crear y controlar procesos?",
+  d:"En UNIX, fork() crea una copia casi idéntica del proceso que llama, exec() sustituye el programa actual por otro y wait() espera a que termine un hijo. Separar fork y exec permite a la shell redirigir la E/S entre ambas llamadas.",
+  k:["fork() devuelve 0 al hijo y el PID del hijo al padre","exec() no regresa si tiene éxito","La separación fork/exec hace posibles las tuberías y las redirecciones"],
+  r:["proceso","syscall"]},
+ {id:"lde",p:"virt",t:"Ejecución directa limitada",ch:"6",crux:"¿Cómo virtualizar la CPU de forma eficiente sin perder el control?",
+  d:"El programa se ejecuta directamente sobre la CPU para ir rápido, pero en modo usuario. Las operaciones privilegiadas pasan por traps al núcleo, y una interrupción de temporizador devuelve el control al SO periódicamente.",
+  k:["Modo usuario y modo núcleo","Tabla de traps configurada en el arranque","La interrupción de temporizador evita que un proceso se apodere de la CPU"],
+  r:["syscall","cambio-contexto","proceso"]},
+ {id:"syscall",p:"virt",t:"Llamada al sistema y trap",ch:"6",crux:"¿Cómo pide un proceso en modo usuario una operación privilegiada?",
+  d:"Una instrucción especial (trap) eleva el nivel de privilegio y salta a un manejador del núcleo previamente registrado. Al terminar, return-from-trap vuelve al modo usuario.",
+  k:["El proceso no elige la dirección de salto, solo un número de llamada","Los registros se guardan en la pila del núcleo"],
+  r:["lde","api-procesos"]},
+ {id:"cambio-contexto",p:"virt",t:"Cambio de contexto",ch:"6",crux:"¿Cómo pasa el SO de un proceso a otro?",
+  d:"El SO guarda los registros del proceso actual en su estructura y restaura los del siguiente. Al ejecutar return-from-trap, la CPU continúa con el nuevo proceso.",
+  k:["Lo dispara una llamada al sistema o la interrupción de temporizador","Tiene un coste: hay que guardar estado y se enfrían cachés y TLB"],
+  r:["lde","planificacion"]},
+ {id:"planificacion",p:"virt",t:"Planificación: FIFO, SJF, STCF, RR",ch:"7",crux:"¿Cómo diseñar una política de planificación?",
+  d:"Las políticas se comparan con dos métricas. El tiempo de retorno (fin − llegada) favorece al trabajo más corto primero; el tiempo de respuesta (primera ejecución − llegada) favorece a Round Robin. No hay una política que gane en ambas.",
+  k:["FIFO sufre el efecto convoy","SJF es óptimo en retorno si todos llegan a la vez","STCF es la versión expropiativa de SJF","RR reparte la CPU en rodajas (quantum)"],
+  r:["mlfq","proporcional","cambio-contexto"],lab:"sched"},
+ {id:"mlfq",p:"virt",t:"Cola multinivel con realimentación (MLFQ)",ch:"8",crux:"¿Cómo planificar sin conocer de antemano la duración de los trabajos?",
+  d:"Varias colas con prioridades distintas. Un trabajo baja de prioridad cuando agota su asignación de tiempo, y periódicamente todos suben a la cola superior. Así aprende del pasado para predecir el futuro.",
+  k:["Regla: si A tiene más prioridad que B, se ejecuta A","Los trabajos nuevos entran con la prioridad máxima","El impulso (boost) periódico evita la inanición","Contar el tiempo total consumido impide engañar al planificador"],
+  r:["planificacion","proporcional"]},
+ {id:"proporcional",p:"virt",t:"Planificación proporcional (lotería, stride)",ch:"9",crux:"¿Cómo repartir la CPU en proporción a unos pesos?",
+  d:"Cada proceso tiene billetes; en la planificación por lotería se sortea quién se ejecuta. Stride lo hace de forma determinista con un contador de paso. Linux CFS usa un tiempo virtual (vruntime) con una idea parecida.",
+  k:["Los billetes representan la parte de CPU","La aleatoriedad es simple y no guarda estado global","CFS ordena los procesos por vruntime en un árbol rojo-negro"],
+  r:["mlfq","planificacion"]},
+ {id:"espacio-direcciones",p:"virt",t:"Espacio de direcciones",ch:"13",crux:"¿Cómo ofrece el SO a cada proceso una memoria privada, grande y propia?",
+  d:"La abstracción de memoria que ve cada proceso: código, montículo (heap) que crece hacia arriba y pila que crece hacia abajo. Todas las direcciones que ve un programa son virtuales.",
+  k:["Objetivos: transparencia, eficiencia y protección","malloc/free gestionan el heap (cap. 14)"],
+  r:["base-limite","paginacion","segmentacion"]},
+ {id:"base-limite",p:"virt",t:"Reubicación dinámica (base y límite)",ch:"15",crux:"¿Cómo traducir direcciones virtuales a físicas de forma eficiente?",
+  d:"El hardware suma un registro base a cada dirección virtual y comprueba que no supere el límite. Si lo supera, lanza una excepción. Es la forma más simple de traducción de direcciones.",
+  k:["física = virtual + base","La MMU hace la traducción en cada acceso","Desperdicia el espacio libre entre heap y pila (fragmentación interna)"],
+  r:["segmentacion","espacio-direcciones"]},
+ {id:"segmentacion",p:"virt",t:"Segmentación",ch:"16",crux:"¿Cómo soportar espacios de direcciones grandes con huecos libres entre medias?",
+  d:"Un par base/límite por cada segmento lógico (código, heap, pila). Los bits altos de la dirección eligen el segmento. Evita reservar memoria física para el hueco, pero provoca fragmentación externa.",
+  k:["La pila crece en sentido negativo","Permite compartir segmentos de código","La fragmentación externa obliga a compactar"],
+  r:["base-limite","espacio-libre","paginacion"]},
+ {id:"espacio-libre",p:"virt",t:"Gestión de espacio libre",ch:"17",crux:"¿Cómo gestionar regiones libres de tamaño variable minimizando la fragmentación?",
+  d:"Una lista libre con división y fusión de bloques. Estrategias: mejor ajuste, peor ajuste, primer ajuste y siguiente ajuste. También existen las listas segregadas y el buddy allocator.",
+  k:["La cabecera de cada bloque guarda su tamaño","Fusionar bloques vecinos reduce la fragmentación","Ninguna estrategia es la mejor para toda carga"],
+  r:["segmentacion"]},
+ {id:"paginacion",p:"virt",t:"Paginación",ch:"18",crux:"¿Cómo virtualizar la memoria con páginas de tamaño fijo?",
+  d:"El espacio virtual se divide en páginas y la memoria física en marcos del mismo tamaño. La tabla de páginas de cada proceso traduce el número de página virtual (VPN) a número de marco físico (PFN). El desplazamiento no cambia.",
+  k:["Dirección = VPN | desplazamiento","Cada PTE lleva bits de válido, protección, presente, sucio y referencia","Sin ayuda es lento: cada acceso necesita otro acceso a la tabla"],
+  r:["tlb","multinivel","espacio-direcciones"],lab:"paging"},
+ {id:"tlb",p:"virt",t:"TLB",ch:"19",crux:"¿Cómo acelerar la traducción de direcciones?",
+  d:"Una caché hardware de traducciones VPN→PFN recientes. Gracias a la localidad espacial y temporal, la mayoría de los accesos aciertan en la TLB y no hace falta leer la tabla de páginas.",
+  k:["En un fallo se consulta la tabla y se rellena la TLB","El ASID evita vaciar la TLB en cada cambio de contexto","Política de sustitución: LRU o aleatoria"],
+  r:["paginacion","multinivel"],lab:"paging"},
+ {id:"multinivel",p:"virt",t:"Tablas de páginas multinivel",ch:"20",crux:"¿Cómo reducir el tamaño de las tablas de páginas?",
+  d:"La tabla se trocea en páginas y un directorio de páginas apunta solo a las que contienen entradas válidas. Ahorra mucha memoria a cambio de más accesos en un fallo de TLB.",
+  k:["Compromiso entre tiempo y espacio","x86-64 usa cuatro niveles","Alternativas: páginas más grandes, tablas invertidas"],
+  r:["paginacion","tlb"]},
+ {id:"swapping",p:"virt",t:"Swapping y políticas de reemplazo",ch:"21–22",crux:"¿Qué página expulsar cuando la memoria se llena?",
+  d:"Las páginas que no caben en memoria van al espacio de swap en disco. Un fallo de página las trae de vuelta. La política óptima (expulsar la que se usará más tarde) sirve de referencia; LRU y su aproximación del reloj funcionan bien en la práctica.",
+  k:["Bit de presente y fallo de página","FIFO puede empeorar con más marcos (anomalía de Belady)","El algoritmo del reloj aproxima LRU con un bit de uso","Thrashing: la memoria no basta para el conjunto de trabajo"],
+  r:["paginacion","tlb"],lab:"repl"},
+
+ // ---------- Concurrencia ----------
+ {id:"hilos",p:"conc",t:"Hilos",ch:"26–27",crux:"¿Cómo aprovechar varias CPU dentro de un mismo programa?",
+  d:"Un hilo es como un proceso que comparte el espacio de direcciones con otros hilos. Cada hilo tiene sus propios registros y su propia pila. La API POSIX ofrece pthread_create y pthread_join.",
+  k:["Paralelismo en varias CPU","Evitan que la E/S bloquee todo el programa","El orden de ejecución lo decide el planificador"],
+  r:["carrera","locks"]},
+ {id:"carrera",p:"conc",t:"Condición de carrera y sección crítica",ch:"26",crux:"¿Cómo garantizar la atomicidad de un fragmento de código?",
+  d:"Cuando dos hilos ejecutan contador++ a la vez, el resultado depende del entrelazado de load, add y store. Ese fragmento es una sección crítica y necesita exclusión mutua.",
+  k:["contador++ son tres instrucciones de máquina","Resultado no determinista","La solución es la atomicidad: todo o nada"],
+  r:["locks","hilos"],lab:"race"},
+ {id:"locks",p:"conc",t:"Locks",ch:"28",crux:"¿Cómo construir un lock eficiente con ayuda del hardware?",
+  d:"Un lock garantiza que solo un hilo esté en la sección crítica. Se construye con instrucciones atómicas como test-and-set, compare-and-swap o fetch-and-add. El ticket lock asegura equidad.",
+  k:["Criterios: exclusión mutua, equidad y rendimiento","Los spin locks gastan CPU esperando","Con yield o colas de espera (futex) se evita el giro"],
+  r:["carrera","estructuras","cond"],lab:"race"},
+ {id:"estructuras",p:"conc",t:"Estructuras de datos concurrentes",ch:"29",crux:"¿Cómo añadir locks a una estructura para que sea correcta y escale?",
+  d:"Un lock global es fácil y correcto, pero no escala. Hay técnicas como el contador aproximado (sloppy counter), las listas con lock por nodo y las tablas hash con un lock por cubeta.",
+  k:["Empieza con un lock grande y afina si hace falta","Más concurrencia no siempre es más rápido"],
+  r:["locks"]},
+ {id:"cond",p:"conc",t:"Variables de condición",ch:"30",crux:"¿Cómo espera un hilo a que se cumpla una condición sin desperdiciar CPU?",
+  d:"Una cola en la que los hilos duermen con wait() hasta que otro hilo llama a signal(). Siempre se usan junto con un lock y se comprueba la condición en un bucle while.",
+  k:["wait() libera el lock y lo vuelve a adquirir al despertar","Semántica Mesa: usa siempre while, no if","Productor/consumidor necesita dos condiciones"],
+  r:["semaforos","prodcons","locks"]},
+ {id:"semaforos",p:"conc",t:"Semáforos",ch:"31",crux:"¿Cómo usar una sola primitiva como lock y como condición?",
+  d:"Un entero con dos operaciones: sem_wait() lo decrementa y bloquea si queda negativo; sem_post() lo incrementa y despierta a un hilo. Con valor inicial 1 actúa como lock; con 0, como mecanismo de orden.",
+  k:["Dijkstra los propuso","Sirven para lectores-escritores y para la cena de los filósofos","El valor inicial determina el comportamiento"],
+  r:["cond","prodcons","deadlock"]},
+ {id:"prodcons",p:"conc",t:"Productor/consumidor",ch:"30–31",crux:"¿Cómo coordinar a quien produce datos con quien los consume en un búfer acotado?",
+  d:"Problema clásico de sincronización: los productores esperan si el búfer está lleno y los consumidores si está vacío. Se resuelve con dos condiciones (vacío y lleno) o con dos semáforos más un mutex.",
+  k:["El mutex debe ir dentro de la espera, no fuera, para evitar interbloqueos","Aparece en tuberías, servidores web y colas de trabajo"],
+  r:["cond","semaforos"]},
+ {id:"deadlock",p:"conc",t:"Interbloqueo (deadlock)",ch:"32",crux:"¿Cómo evitar que los hilos se queden esperándose unos a otros para siempre?",
+  d:"Se necesitan cuatro condiciones: exclusión mutua, retener y esperar, no expropiación y espera circular. Romper cualquiera lo previene; lo más habitual es imponer un orden total en la adquisición de locks.",
+  k:["Los errores de concurrencia más comunes son de atomicidad y de orden","Alternativas: evitarlo planificando, o detectarlo y recuperarse"],
+  r:["locks","semaforos"]},
+ {id:"eventos",p:"conc",t:"Concurrencia basada en eventos",ch:"33",crux:"¿Cómo construir un servidor concurrente sin hilos?",
+  d:"Un bucle de eventos espera con select() o poll() y procesa un evento cada vez. No hace falta usar locks, pero las llamadas bloqueantes están prohibidas, así que se usa E/S asíncrona y continuaciones.",
+  k:["Patrón de Node.js y nginx","Gestionar el estado entre eventos es complicado","No aprovecha varias CPU por sí solo"],
+  r:["hilos"]},
+
+ // ---------- Persistencia ----------
+ {id:"io",p:"pers",t:"Dispositivos de E/S",ch:"36",crux:"¿Cómo integrar la E/S en el sistema de forma eficiente?",
+  d:"Un dispositivo expone registros de estado, comando y datos. El SO puede sondearlo (polling) o esperar una interrupción. Con DMA, el dispositivo copia los datos a memoria sin ocupar la CPU. Los drivers ocultan los detalles.",
+  k:["Las interrupciones solapan cálculo y E/S","Con dispositivos muy rápidos, el polling puede ser mejor","Acceso por instrucciones de E/S o por E/S mapeada en memoria"],
+  r:["disco","ssd"]},
+ {id:"disco",p:"pers",t:"Discos duros y su planificación",ch:"37",crux:"¿Cómo se almacenan y acceden los datos en un disco?",
+  d:"Tiempo de E/S = búsqueda + rotación + transferencia. El acceso secuencial es mucho más rápido que el aleatorio. Los planificadores SSTF, SCAN (ascensor) y SPTF reordenan las peticiones.",
+  k:["Sectores de 512 bytes que se escriben de forma atómica","La búsqueda y la rotación dominan en accesos aleatorios","SCAN evita la inanición de SSTF"],
+  r:["raid","ffs","io"]},
+ {id:"raid",p:"pers",t:"RAID",ch:"38",crux:"¿Cómo hacer un almacenamiento grande, rápido y fiable con varios discos?",
+  d:"Varios discos presentados como uno solo. RAID-0 reparte en bandas (rendimiento), RAID-1 replica (fiabilidad) y RAID-4/5 usan paridad. RAID-5 rota la paridad para evitar el cuello de botella de RAID-4.",
+  k:["Se evalúan capacidad, fiabilidad y rendimiento","La paridad XOR permite reconstruir un disco perdido","Las escrituras pequeñas son caras en RAID-4/5"],
+  r:["disco","integridad"]},
+ {id:"ficheros",p:"pers",t:"Ficheros y directorios",ch:"39",crux:"¿Qué interfaz de almacenamiento persistente debe ofrecer el SO?",
+  d:"Un fichero es un array de bytes con un número de inodo; un directorio asocia nombres a inodos. La API incluye open, read, write, lseek, fsync, rename, link y unlink.",
+  k:["Descriptores de fichero y tabla de ficheros abiertos","fsync() fuerza la escritura a disco","Enlace duro = otro nombre para el mismo inodo; unlink borra un nombre","rename() es atómico"],
+  r:["vsfs","consistencia"]},
+ {id:"vsfs",p:"pers",t:"Implementación de un sistema de ficheros",ch:"40",crux:"¿Qué estructuras en disco necesita un sistema de ficheros?",
+  d:"El sistema de ficheros muy simple (VSFS) usa un superbloque, bitmaps de inodos y de datos, una tabla de inodos y bloques de datos. Los inodos localizan los datos con punteros directos e indirectos.",
+  k:["Abrir /foo/bar recorre la ruta inodo a inodo","Una escritura puede requerir cinco E/S","La caché de páginas y el búfer de escritura ocultan latencia"],
+  r:["ficheros","ffs","consistencia"]},
+ {id:"ffs",p:"pers",t:"Fast File System (FFS)",ch:"41",crux:"¿Cómo organizar los datos en disco para mejorar el rendimiento?",
+  d:"Divide el disco en grupos de cilindros y coloca juntos lo que se usa junto: un fichero cerca de su inodo y los ficheros de un directorio en el mismo grupo. Los ficheros grandes se reparten entre grupos.",
+  k:["Diseño consciente del disco","Bloques de 4 KB con subbloques para ficheros pequeños","Introdujo los nombres largos y los enlaces simbólicos"],
+  r:["vsfs","disco"]},
+ {id:"consistencia",p:"pers",t:"Consistencia ante caídas: fsck y journaling",ch:"42",crux:"¿Cómo actualizar el disco de forma segura si el sistema puede caerse en cualquier momento?",
+  d:"Una escritura afecta a varias estructuras (bitmap, inodo y datos) y una caída puede dejarlas a medias. fsck repara el disco al arrancar, pero es lento. El journaling escribe primero la transacción en un registro y después la aplica (checkpoint).",
+  k:["Fases: escribir en el diario, commit, checkpoint y liberar","El journaling de metadatos (modo ordered) es el más común","Alternativas: copy-on-write y backpointers"],
+  r:["vsfs","lfs"]},
+ {id:"lfs",p:"pers",t:"Sistema de ficheros log-structured (LFS)",ch:"43",crux:"¿Cómo convertir todas las escrituras en escrituras secuenciales?",
+  d:"Agrupa las actualizaciones en un segmento y lo escribe de forma secuencial al final de un log. Un mapa de inodos (imap) localiza los inodos. Un limpiador recupera los bloques obsoletos.",
+  k:["Nunca sobrescribe en su sitio","La recolección de basura es el reto principal","Inspiró a WAFL, ZFS y btrfs"],
+  r:["consistencia","ssd"]},
+ {id:"ssd",p:"pers",t:"SSD basados en flash",ch:"44",crux:"¿Cómo construir un dispositivo fiable y rápido con memoria flash?",
+  d:"La flash se lee y programa por páginas, pero se borra por bloques, y cada bloque soporta un número limitado de borrados. La capa de traducción (FTL) usa escritura tipo log, recolección de basura y nivelación del desgaste.",
+  k:["Sin partes móviles, así que el acceso aleatorio es rápido","Amplificación de escritura","TRIM informa al SSD de los bloques libres"],
+  r:["lfs","disco"]},
+ {id:"integridad",p:"pers",t:"Integridad de datos",ch:"45",crux:"¿Cómo detectar y recuperar datos corruptos?",
+  d:"Los discos fallan de forma parcial: errores latentes de sector y corrupción silenciosa. Las sumas de comprobación (checksums) detectan la corrupción; el scrubbing revisa los datos periódicamente.",
+  k:["Checksum: XOR, Fletcher o CRC","Escrituras fantasma y mal dirigidas","Se combina con redundancia para recuperar los datos"],
+  r:["raid"]},
+ {id:"distribuidos",p:"pers",t:"Sistemas distribuidos: NFS y AFS",ch:"47–49",crux:"¿Cómo construir sistemas que sigan funcionando cuando fallan sus componentes?",
+  d:"La comunicación es poco fiable, así que se usan acuses de recibo, reintentos y RPC. NFS usa un protocolo sin estado con operaciones idempotentes. AFS guarda ficheros completos en caché y usa callbacks.",
+  k:["La idempotencia simplifica la recuperación","Coherencia de caché: NFS por sondeo, AFS con callbacks","Semántica al cerrar el fichero (AFS)"],
+  r:["ficheros"]}
+];
+const byId = Object.fromEntries(C.map(c=>[c.id,c]));
+
+const store = {
+  get(k,d){try{const v=localStorage.getItem("ostep:"+k);return v?JSON.parse(v):d}catch(e){return d}},
+  set(k,v){try{localStorage.setItem("ostep:"+k,JSON.stringify(v))}catch(e){}}
+};
+let known = new Set(store.get("known",[]));
+let filter = null; // pieza activa
+let current = location.hash.slice(1) && byId[location.hash.slice(1)] ? location.hash.slice(1) : "paginacion";
+
+const $ = s => document.querySelector(s);
+const esc = s => String(s).replace(/[&<>"]/g,m=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[m]));
+const pc = p => `--pc:var(--${p});--pcs:var(--${p}-soft)`;
+const norm = s => s.normalize("NFD").replace(/[̀-ͯ]/g,"").toLowerCase();
+
+/* ---- Piezas ---- */
+function renderPieces(){
+  $("#pieces").innerHTML = Object.entries(PIECES).map(([k,v])=>{
+    const n = C.filter(c=>c.p===k).length, kn = C.filter(c=>c.p===k && known.has(c.id)).length;
+    return `<button class="piece" style="${pc(k)}" data-p="${k}" aria-pressed="${filter===k}">
+      <b>${v.name}</b><small>${v.blurb}</small><span class="ch">${v.chapters} · ${n} conceptos · ${kn} dominados</span></button>`;
+  }).join("");
+}
+$("#pieces").addEventListener("click",e=>{
+  const b=e.target.closest(".piece"); if(!b) return;
+  filter = filter===b.dataset.p ? null : b.dataset.p;
+  renderPieces(); renderList(); renderLabNav(); showView("explorar");
+});
+
+/* ---- Explorador ---- */
+function renderList(){
+  const q = norm($("#q").value.trim());
+  const match = c => !q || norm(c.t+" "+c.d+" "+c.k.join(" ")+" "+c.crux).includes(q);
+  let total=0;
+  $("#list").innerHTML = Object.keys(PIECES).filter(p=>!filter||filter===p).map(p=>{
+    const items = C.filter(c=>c.p===p && match(c)); total+=items.length;
+    if(!items.length) return "";
+    return `<div class="group" style="${pc(p)}"><h3>${PIECES[p].name}</h3><div class="chips">${
+      items.map(c=>`<button class="chip${known.has(c.id)?" known":""}" data-id="${c.id}" aria-current="${c.id===current}">${esc(c.t)}</button>`).join("")
+    }</div></div>`;
+  }).join("") || `<p class="count">No hay conceptos que coincidan. Prueba con otra palabra.</p>`;
+  $("#count").textContent = `${total} de ${C.length} conceptos`;
+}
+function renderDetail(){
+  const c = byId[current], P = PIECES[c.p];
+  const d = $("#detail"); d.setAttribute("style",pc(c.p));
+  d.innerHTML = `
+    <div class="meta"><span class="tag">${P.name}</span><span class="tag">Cap. ${c.ch}</span></div>
+    <h2>${esc(c.t)}</h2>
+    <div class="crux"><span class="label">El problema central</span>${esc(c.crux)}</div>
+    <p>${esc(c.d)}</p>
+    <div><div class="label" style="margin-bottom:6px">Ideas clave</div><ul>${c.k.map(x=>`<li>${esc(x)}</li>`).join("")}</ul></div>
+    <div><div class="label" style="margin-bottom:6px">Relacionado</div><div class="related">${
+      c.r.map(id=>`<button data-id="${id}" style="${pc(byId[id].p)}">${esc(byId[id].t)}</button>`).join("")}</div></div>
+    <div class="actions">
+      <button class="btn" id="toggleKnown">${known.has(c.id)?"Quitar de dominados":"Marcar como dominado"}</button>
+      ${c.lab?`<button class="btn primary" data-lab="${c.lab}">Abrir simulador</button>`:""}
+    </div>`;
+}
+function select(id){
+  current=id; renderList(); renderDetail();
+  try{history.replaceState(null,"","#"+id)}catch(e){}
+}
+$("#list").addEventListener("click",e=>{const b=e.target.closest(".chip"); if(b) select(b.dataset.id)});
+$("#detail").addEventListener("click",e=>{
+  const r=e.target.closest(".related button"); if(r){select(r.dataset.id);return}
+  if(e.target.id==="toggleKnown"){
+    known.has(current)?known.delete(current):known.add(current);
+    store.set("known",[...known]); renderList(); renderDetail(); renderPieces();
+  }
+  const l=e.target.closest("[data-lab]"); if(l){openLab(l.dataset.lab)}
+});
+$("#q").addEventListener("input",renderList);
+
+/* ---- Pestañas ---- */
+function showView(v){
+  document.querySelectorAll("nav.tabs button").forEach(b=>b.setAttribute("aria-selected",b.dataset.view===v));
+  ["explorar","lab","repaso"].forEach(x=>$("#view-"+x).hidden = x!==v);
+  store.set("view",v);
+}
+document.querySelector("nav.tabs").addEventListener("click",e=>{const b=e.target.closest("button"); if(b) showView(b.dataset.view)});
+
+/* =================== LABORATORIO =================== */
+const LABS = {
+  sched:{p:"virt",t:"Planificador de CPU",s:"FIFO · SJF · STCF · RR",render:labSched},
+  paging:{p:"virt",t:"Traducción con paginación",s:"VPN, PFN y TLB",render:labPaging},
+  repl:{p:"virt",t:"Reemplazo de páginas",s:"FIFO · LRU · Óptimo",render:labRepl},
+  race:{p:"conc",t:"Condición de carrera",s:"contador++ con y sin lock",render:labRace},
+  raid:{p:"pers",t:"Paridad en RAID-4",s:"Reconstruye un disco con XOR",render:labRaid}
+};
+let curLab = store.get("lab","sched"); if(!LABS[curLab]) curLab="sched";
+function renderLabNav(){
+  $("#labnav").innerHTML = Object.entries(LABS).filter(([k,l])=>!filter||l.p===filter||k===curLab).map(([k,l])=>
+    `<button style="${pc(l.p)}" data-k="${k}" aria-pressed="${k===curLab}"><b>${l.t}</b><small>${l.s}</small></button>`).join("");
+}
+$("#labnav").addEventListener("click",e=>{const b=e.target.closest("button"); if(b) openLab(b.dataset.k,false)});
+function openLab(k,switchView=true){
+  curLab=k; store.set("lab",k); renderLabNav();
+  const host=$("#labhost"); host.innerHTML=""; LABS[k].render(host);
+  if(switchView) showView("lab");
+}
+
+/* ---- Planificador ---- */
+const JOBCOL = ["var(--virt)","var(--conc)","var(--pers)","#3E6FB0"];
+function labSched(host){
+  let jobs = [{n:"A",a:0,l:8},{n:"B",a:1,l:4},{n:"C",a:2,l:9},{n:"D",a:3,l:2}];
+  let pol="RR", q=2;
+  host.innerHTML = `<div class="lab" style="${pc("virt")}">
+    <div><div class="label">Capítulo 7</div><h2>Planificador de CPU</h2></div>
+    <p class="intro">Cambia la política y la duración de los trabajos. Observa cómo SJF y STCF minimizan el tiempo de retorno mientras que Round Robin minimiza el tiempo de respuesta.</p>
+    <div class="controls">
+      <div class="field"><span class="label">Política</span><div class="seg" id="pol">${["FIFO","SJF","STCF","RR"].map(x=>`<button data-v="${x}">${x}</button>`).join("")}</div></div>
+      <div class="field"><label class="label" for="quantum">Quantum (RR)</label><input type="number" id="quantum" min="1" max="10" value="${q}"></div>
+    </div>
+    <div class="jobs" id="jobs"></div>
+    <div class="scroll"><div class="gantt" id="gantt"></div></div>
+    <div class="stats" id="sstats"></div>
+  </div>`;
+  const jobsEl=host.querySelector("#jobs");
+  jobsEl.innerHTML = jobs.map((j,i)=>`<div class="job"><span class="sw" style="background:${JOBCOL[i]}"></span>
+    <div class="field"><label class="label" for="ja${i}">${j.n} llega</label><input type="number" id="ja${i}" min="0" max="30" value="${j.a}" data-i="${i}" data-f="a"></div>
+    <div class="field"><label class="label" for="jl${i}">dura</label><input type="number" id="jl${i}" min="1" max="20" value="${j.l}" data-i="${i}" data-f="l"></div></div>`).join("");
+  jobsEl.addEventListener("input",e=>{const t=e.target; if(t.dataset.i===undefined) return; const v=Math.max(t.dataset.f==="l"?1:0,Math.min(+t.max,parseInt(t.value)||0)); jobs[t.dataset.i][t.dataset.f]=v; draw()});
+  host.querySelector("#pol").addEventListener("click",e=>{const b=e.target.closest("button"); if(b){pol=b.dataset.v; draw()}});
+  host.querySelector("#quantum").addEventListener("input",e=>{q=Math.max(1,parseInt(e.target.value)||1); draw()});
+
+  function simulate(){
+    const st=jobs.map(j=>({...j,rem:j.l,start:null,end:null}));
+    const tl=[]; let t=0, cur=null, slice=0; const queue=[];
+    const arrived=()=>st.filter(j=>j.a<=t && j.rem>0);
+    while(st.some(j=>j.rem>0) && t<200){
+      if(pol==="RR"){
+        st.forEach(j=>{if(j.a===t) queue.push(j)});
+        if(cur && (cur.rem===0 || slice>=q)){ if(cur.rem>0) queue.push(cur); cur=null; }
+        if(!cur){cur=queue.shift()||null; slice=0}
+      } else {
+        const av=arrived();
+        if(pol==="FIFO"){ if(!cur||cur.rem===0) cur=av.sort((x,y)=>x.a-y.a)[0]||null; }
+        if(pol==="SJF"){ if(!cur||cur.rem===0) cur=av.sort((x,y)=>x.l-y.l||x.a-y.a)[0]||null; }
+        if(pol==="STCF"){ cur=av.sort((x,y)=>x.rem-y.rem||x.a-y.a)[0]||null; }
+      }
+      if(cur){ if(cur.start===null) cur.start=t; cur.rem--; slice++; tl.push(cur.n); if(cur.rem===0) cur.end=t+1; }
+      else tl.push(null);
+      t++;
+    }
+    return {st,tl};
+  }
+  function draw(){
+    host.querySelectorAll("#pol button").forEach(b=>b.setAttribute("aria-pressed",b.dataset.v===pol));
+    host.querySelector("#quantum").disabled = pol!=="RR";
+    const {st,tl}=simulate(), T=tl.length, w=100/T;
+    const rows = st.map((j,i)=>{
+      let cells=""; tl.forEach((n,t)=>{ if(n===j.n) cells+=`<div class="gcell" style="left:${t*w}%;width:calc(${w}% - 1px);background:${JOBCOL[i]}">${j.n}</div>`});
+      const arr = `<div style="position:absolute;left:${j.a*w}%;top:-3px;bottom:-3px;border-left:2px dotted var(--muted)"></div>`;
+      return `<div class="grow"><span class="mono">${j.n}</span><div class="gtrack">${arr}${cells}</div></div>`;
+    }).join("");
+    const step = T>30?5:T>15?2:1; let ax="";
+    for(let t=0;t<=T;t+=step) ax+=`<span style="left:${t*w}%">${t}</span>`;
+    host.querySelector("#gantt").innerHTML = rows + `<div class="grow"><span></span><div class="gaxis">${ax}</div></div>`;
+    const ta = st.reduce((s,j)=>s+(j.end-j.a),0)/st.length, rs = st.reduce((s,j)=>s+(j.start-j.a),0)/st.length;
+    host.querySelector("#sstats").innerHTML = `
+      <div class="stat"><span class="label">Retorno medio</span><b>${ta.toFixed(2)}</b></div>
+      <div class="stat"><span class="label">Respuesta media</span><b>${rs.toFixed(2)}</b></div>
+      <div class="stat"><span class="label">Tiempo total</span><b>${T}</b></div>
+      <div class="stat" style="flex:1 1 220px"><span class="label" style="display:block">Fórmulas</span><span class="mono" style="font-size:13px">T<sub>retorno</sub> = T<sub>fin</sub> − T<sub>llegada</sub><br>T<sub>respuesta</sub> = T<sub>1ª ejecución</sub> − T<sub>llegada</sub></span></div>`;
+  }
+  draw();
+}
+
+/* ---- Paginación ---- */
+function labPaging(host){
+  // Espacio virtual de 256 bytes (8 bits), páginas de 16 bytes -> 16 páginas, memoria física de 512 bytes (32 marcos)
+  const PT = [7,null,22,3,null,null,14,null,30,null,1,null,null,19,9,25];
+  let va = 0x6B, tlb=[], hits=0, misses=0;
+  host.innerHTML = `<div class="lab" style="${pc("virt")}">
+    <div><div class="label">Capítulos 18 y 19</div><h2>Traducción con paginación</h2></div>
+    <p class="intro">Espacio virtual de 256 bytes (direcciones de 8 bits) con páginas de 16 bytes: 4 bits de VPN y 4 de desplazamiento. La TLB tiene 4 entradas con sustitución LRU. Traduce varias direcciones de la misma página y verás los aciertos.</p>
+    <div class="controls">
+      <div class="field"><label class="label" for="va">Dirección virtual (0–255)</label><input type="number" id="va" min="0" max="255" value="${va}" style="width:110px"></div>
+      <div class="field" style="flex:1 1 200px"><label class="label" for="vaR">Desliza</label><input type="range" id="vaR" min="0" max="255" value="${va}"></div>
+      <button class="btn primary" id="tr">Traducir</button>
+      <button class="btn" id="rnd">Dirección aleatoria</button>
+      <button class="btn" id="flush">Vaciar TLB</button>
+    </div>
+    <div class="twocol">
+      <div style="display:grid;gap:14px">
+        <div><div class="label" style="margin-bottom:6px">Dirección virtual</div><div class="bits" id="vbits"></div></div>
+        <div><div class="label" style="margin-bottom:6px">Dirección física</div><div class="bits" id="pbits"></div></div>
+        <div id="pres" class="result"></div>
+        <ol class="steps" id="psteps"></ol>
+        <div class="stats" id="tlbstats"></div>
+      </div>
+      <div style="display:grid;gap:14px;align-content:start">
+        <div><div class="label" style="margin-bottom:6px">TLB</div><div class="scroll"><table class="t" id="tlbt"></table></div></div>
+        <div><div class="label" style="margin-bottom:6px">Tabla de páginas</div><div class="scroll"><table class="t" id="ptt"></table></div></div>
+      </div>
+    </div>
+  </div>`;
+  const bin=(n,b)=>n.toString(2).padStart(b,"0");
+  const vaIn=host.querySelector("#va"), vaR=host.querySelector("#vaR");
+  const set=v=>{va=Math.max(0,Math.min(255,v|0)); vaIn.value=va; vaR.value=va; preview()};
+  vaIn.addEventListener("input",()=>set(+vaIn.value)); vaR.addEventListener("input",()=>set(+vaR.value));
+  host.querySelector("#rnd").onclick=()=>{set(Math.floor(Math.random()*256)); translate()};
+  host.querySelector("#tr").onclick=translate;
+  host.querySelector("#flush").onclick=()=>{tlb=[]; hits=0; misses=0; preview(); tables(); stats()};
+  function preview(){
+    const vpn=va>>4, off=va&15;
+    host.querySelector("#vbits").innerHTML = [...bin(vpn,4)].map(b=>`<span class="bit vpn">${b}</span>`).join("")+[...bin(off,4)].map(b=>`<span class="bit off">${b}</span>`).join("")
+      + `<span class="mono" style="align-self:center;margin-left:8px;color:var(--muted)">VPN ${vpn} · desp. ${off} · 0x${va.toString(16).toUpperCase().padStart(2,"0")}</span>`;
+    tables(vpn);
+  }
+  function translate(){
+    const vpn=va>>4, off=va&15, steps=[];
+    steps.push(`Separar la dirección: VPN = ${va} >> 4 = <b>${vpn}</b>, desplazamiento = ${va} & 0xF = <b>${off}</b>.`);
+    let pfn, hit = tlb.find(e=>e.vpn===vpn);
+    if(hit){ hits++; pfn=hit.pfn; tlb=[hit,...tlb.filter(e=>e!==hit)];
+      steps.push(`Buscar VPN ${vpn} en la TLB: <b style="color:var(--good)">acierto</b>, PFN = ${pfn}. No hace falta leer la tabla de páginas.`);
+    } else { misses++;
+      steps.push(`Buscar VPN ${vpn} en la TLB: <b style="color:var(--bad)">fallo</b>. Leer la PTE ${vpn} de la tabla de páginas en memoria.`);
+      pfn=PT[vpn];
+      if(pfn===null){
+        steps.push(`La PTE no es válida, así que el hardware lanza una excepción y el SO termina el proceso (segmentation fault).`);
+        show(steps,null,vpn); return;
+      }
+      tlb=[{vpn,pfn},...tlb].slice(0,4);
+      steps.push(`PTE válida, PFN = ${pfn}. Insertar (${vpn} → ${pfn}) en la TLB${tlb.length===4?" (se expulsa la entrada menos usada si no cabe)":""}.`);
+    }
+    const pa=(pfn<<4)|off;
+    steps.push(`Dirección física = PFN << 4 | desplazamiento = ${pfn} × 16 + ${off} = <b>${pa}</b>.`);
+    show(steps,pa,vpn,pfn);
+  }
+  function show(steps,pa,vpn,pfn){
+    host.querySelector("#psteps").innerHTML=steps.map(s=>`<li>${s}</li>`).join("");
+    const r=host.querySelector("#pres"), pb=host.querySelector("#pbits");
+    if(pa===null){ r.className="result err"; r.textContent=`VA ${va} → excepción: página ${vpn} no válida`; pb.innerHTML=`<span class="mono" style="color:var(--muted)">sin traducción</span>`; }
+    else { r.className="result ok"; r.textContent=`VA ${va} (0x${va.toString(16).toUpperCase()}) → PA ${pa} (0x${pa.toString(16).toUpperCase()})`;
+      pb.innerHTML=[...bin(pfn,5)].map(b=>`<span class="bit pfn">${b}</span>`).join("")+[...bin(va&15,4)].map(b=>`<span class="bit off">${b}</span>`).join("")
+      +`<span class="mono" style="align-self:center;margin-left:8px;color:var(--muted)">PFN ${pfn} · desp. ${va&15}</span>`; }
+    tables(vpn); stats();
+  }
+  function tables(vpn=va>>4){
+    host.querySelector("#ptt").innerHTML = `<tr><th>VPN</th><th>Válido</th><th>PFN</th></tr>`+
+      PT.map((p,i)=>`<tr class="${i===vpn?"hl":""}"><td>${i}</td><td class="${p===null?"inv":""}">${p===null?"0":"1"}</td><td class="${p===null?"inv":""}">${p===null?"—":p}</td></tr>`).join("");
+    host.querySelector("#tlbt").innerHTML = `<tr><th>Ranura</th><th>VPN</th><th>PFN</th></tr>`+
+      [0,1,2,3].map(i=>{const e=tlb[i]; return `<tr class="${e&&e.vpn===vpn?"hl":""}"><td>${i}</td><td class="${e?"":"inv"}">${e?e.vpn:"vacía"}</td><td class="${e?"":"inv"}">${e?e.pfn:"—"}</td></tr>`}).join("");
+  }
+  function stats(){
+    const tot=hits+misses;
+    host.querySelector("#tlbstats").innerHTML=`<div class="stat"><span class="label">Aciertos TLB</span><b>${hits}</b></div>
+      <div class="stat"><span class="label">Fallos TLB</span><b>${misses}</b></div>
+      <div class="stat"><span class="label">Tasa de acierto</span><b>${tot?Math.round(hits/tot*100):0}%</b></div>`;
+  }
+  preview(); translate();
+}
+
+/* ---- Reemplazo ---- */
+function labRepl(host){
+  let refs="7 0 1 2 0 3 0 4 2 3 0 3 2 1 2 0 1 7 0 1", frames=3, pol="LRU";
+  host.innerHTML = `<div class="lab" style="${pc("virt")}">
+    <div><div class="label">Capítulo 22</div><h2>Reemplazo de páginas</h2></div>
+    <p class="intro">Cuando la memoria está llena, ¿qué página se expulsa? Compara FIFO, LRU y la política óptima de Bélády (que conoce el futuro) sobre la misma secuencia de referencias. Prueba la secuencia 1 2 3 4 1 2 5 1 2 3 4 5 con 3 y 4 marcos en FIFO para ver la anomalía de Belady.</p>
+    <div class="controls">
+      <div class="field" style="flex:1 1 280px"><label class="label" for="refs">Secuencia de páginas</label><input id="refs" value="${refs}"></div>
+      <div class="field"><label class="label" for="frames">Marcos</label><input type="number" id="frames" min="1" max="7" value="${frames}"></div>
+      <div class="field"><span class="label">Política</span><div class="seg" id="rpol">${["FIFO","LRU","OPT"].map(x=>`<button data-v="${x}">${x==="OPT"?"Óptimo":x}</button>`).join("")}</div></div>
+    </div>
+    <div class="cmp" id="cmp"></div>
+    <div class="scroll"><table class="t frames" id="rt"></table></div>
+  </div>`;
+  host.querySelector("#refs").addEventListener("input",e=>{refs=e.target.value; draw()});
+  host.querySelector("#frames").addEventListener("input",e=>{frames=Math.max(1,Math.min(7,parseInt(e.target.value)||1)); draw()});
+  host.querySelector("#rpol").addEventListener("click",e=>{const b=e.target.closest("button"); if(b){pol=b.dataset.v; draw()}});
+  function run(seq,n,p){
+    let mem=[], meta={}, out=[], hits=0;
+    seq.forEach((pg,i)=>{
+      let hit=mem.includes(pg), ev=null;
+      if(hit){hits++; if(p==="LRU") meta[pg]=i;}
+      else{
+        if(mem.length>=n){
+          let victim;
+          if(p==="FIFO"||p==="LRU") victim=mem.reduce((a,b)=>meta[a]<=meta[b]?a:b);
+          else victim=mem.reduce((a,b)=>{const na=seq.indexOf(a,i+1), nb=seq.indexOf(b,i+1); const A=na<0?1e9:na, B=nb<0?1e9:nb; return A>=B?a:b});
+          mem[mem.indexOf(victim)]=pg; ev=victim;
+        } else mem.push(pg);
+        meta[pg]=i;
+      }
+      out.push({pg,hit,ev,mem:[...mem]});
+    });
+    return {out,hits};
+  }
+  function draw(){
+    host.querySelectorAll("#rpol button").forEach(b=>b.setAttribute("aria-pressed",b.dataset.v===pol));
+    const seq=refs.split(/[\s,]+/).filter(Boolean).slice(0,40);
+    if(!seq.length){host.querySelector("#rt").innerHTML=""; host.querySelector("#cmp").innerHTML=`<p class="count">Escribe una secuencia de páginas separadas por espacios.</p>`; return}
+    host.querySelector("#cmp").innerHTML=["FIFO","LRU","OPT"].map(p=>{const r=run(seq,frames,p), pct=r.hits/seq.length*100;
+      return `<div><span style="font-weight:${p===pol?700:400}">${p==="OPT"?"Óptimo":p}</span><span class="bar"><i style="width:${pct}%;background:${p===pol?"var(--virt)":"var(--muted)"}"></i></span><span>${r.hits}/${seq.length} · ${Math.round(pct)}%</span></div>`}).join("")
+      +`<span class="label">Tasa de aciertos con ${frames} marco${frames>1?"s":""}</span>`;
+    const {out}=run(seq,frames,pol);
+    let h=`<tr><th>Ref.</th>${out.map(o=>`<td><b>${esc(o.pg)}</b></td>`).join("")}</tr>`;
+    for(let f=0;f<frames;f++) h+=`<tr><th>Marco ${f}</th>${out.map(o=>`<td>${o.mem[f]!==undefined?esc(o.mem[f]):"·"}</td>`).join("")}</tr>`;
+    h+=`<tr><th>Resultado</th>${out.map(o=>`<td class="${o.hit?"hit":"miss"}">${o.hit?"✓":"✗"}</td>`).join("")}</tr>`;
+    h+=`<tr><th>Expulsa</th>${out.map(o=>`<td class="inv">${o.ev!==null?esc(o.ev):""}</td>`).join("")}</tr>`;
+    host.querySelector("#rt").innerHTML=h;
+  }
+  draw();
+}
+
+/* ---- Condición de carrera ---- */
+function labRace(host){
+  const CODE_NL=["mov  0x8049a1c, %eax","add  $0x1, %eax","mov  %eax, 0x8049a1c"];
+  const CODE_L=["lock(&m)","mov  0x8049a1c, %eax","add  $0x1, %eax","mov  %eax, 0x8049a1c","unlock(&m)"];
+  let useLock=false, S;
+  const reset=()=>{S={counter:50,lock:null,t:[{pc:0,eax:0,done:0},{pc:0,eax:0,done:0}],log:[]}};
+  reset();
+  host.innerHTML = `<div class="lab" style="${pc("conc")}">
+    <div><div class="label">Capítulos 26 y 28</div><h2>Condición de carrera</h2></div>
+    <p class="intro">Dos hilos ejecutan <span class="mono">contador = contador + 1</span>, que en x86 son tres instrucciones. Tú haces de planificador: elige qué hilo avanza. Prueba a ejecutar la carga del hilo 1, cambiar al hilo 2 y completar su incremento, y luego volver al hilo 1. Se pierde una actualización. Activa el lock y repítelo.</p>
+    <div class="controls">
+      <div class="field"><span class="label">Modo</span><div class="seg" id="lk"><button data-v="0">Sin lock</button><button data-v="1">Con lock</button></div></div>
+      <button class="btn" id="s1">Avanza hilo 1</button>
+      <button class="btn" id="s2">Avanza hilo 2</button>
+      <button class="btn" id="auto">Entrelazado aleatorio</button>
+      <button class="btn" id="rs">Reiniciar</button>
+    </div>
+    <div class="threads">
+      <div class="thread" id="th0"></div>
+      <div class="mem" id="memv"></div>
+      <div class="thread" id="th1"></div>
+    </div>
+    <div class="log" id="rlog" aria-live="polite"></div>
+    <div style="display:grid;gap:10px">
+      <div class="controls"><button class="btn primary" id="mass">Ejecutar 2 hilos × 100 000 incrementos</button><span class="count">Simula muchos entrelazados aleatorios con cambios de contexto en puntos arbitrarios.</span></div>
+      <div class="stats" id="mstats"></div>
+    </div>
+  </div>`;
+  const code=()=>useLock?CODE_L:CODE_NL;
+  function step(i){
+    const th=S.t[i], c=code(), ins=c[th.pc], name=`T${i+1}`;
+    if(th.done) {S.log.unshift(`${name}: ya ha terminado su incremento.`); return draw()}
+    if(ins.startsWith("lock")){ if(S.lock!==null && S.lock!==i){S.log.unshift(`${name}: el lock lo tiene T${S.lock+1}; espera girando (spin).`); return draw()} S.lock=i; S.log.unshift(`${name}: adquiere el lock.`);}
+    else if(ins.startsWith("unlock")){S.lock=null; S.log.unshift(`${name}: libera el lock.`)}
+    else if(ins.includes(", %eax") && ins.startsWith("mov")){th.eax=S.counter; S.log.unshift(`${name}: carga contador (${S.counter}) en %eax.`)}
+    else if(ins.startsWith("add")){th.eax++; S.log.unshift(`${name}: %eax = ${th.eax}.`)}
+    else {S.counter=th.eax; S.log.unshift(`${name}: guarda %eax (${th.eax}) en contador.`)}
+    th.pc++; if(th.pc>=c.length){th.done=1; th.pc=c.length-1; S.log.unshift(`${name}: termina.`)}
+    draw();
+  }
+  function draw(){
+    host.querySelectorAll("#lk button").forEach(b=>b.setAttribute("aria-pressed",(b.dataset.v==="1")===useLock));
+    [0,1].forEach(i=>{const th=S.t[i];
+      host.querySelector("#th"+i).innerHTML=`<h3>Hilo ${i+1}</h3><div class="code">${code().map((l,j)=>`<div class="${!th.done&&j===th.pc?"pc":""}">${esc(l)}</div>`).join("")}</div>
+      <div class="mono" style="font-size:13px">%eax = ${th.eax}${th.done?" · terminado":""}</div>`;
+    });
+    const done=S.t.every(t=>t.done);
+    host.querySelector("#memv").innerHTML=`<span class="label">contador en memoria</span><b>${S.counter}</b>
+      <span class="mono" style="font-size:12px;color:var(--muted)">esperado al final: 52</span>
+      ${useLock?`<span class="tag">lock: ${S.lock===null?"libre":"T"+(S.lock+1)}</span>`:""}
+      ${done?`<div class="result ${S.counter===52?"ok":"err"}">${S.counter===52?"Correcto":"Se perdió una actualización"}</div>`:""}`;
+    host.querySelector("#rlog").innerHTML=S.log.length?S.log.map(esc).join("<br>"):"Contador inicial: 50. Pulsa “Avanza hilo 1” o “Avanza hilo 2”.";
+  }
+  host.querySelector("#s1").onclick=()=>step(0);
+  host.querySelector("#s2").onclick=()=>step(1);
+  host.querySelector("#rs").onclick=()=>{reset();draw()};
+  host.querySelector("#lk").addEventListener("click",e=>{const b=e.target.closest("button"); if(b){useLock=b.dataset.v==="1"; reset(); draw()}});
+  host.querySelector("#auto").onclick=()=>{reset(); let g=0; while(!S.t.every(t=>t.done)&&g++<50){const a=S.t.filter(t=>!t.done); step(S.t.indexOf(a[Math.floor(Math.random()*a.length)]))}};
+  host.querySelector("#mass").onclick=()=>{
+    const N=100000; let counter=0;
+    const T=[{i:0,eax:0,pc:0},{i:0,eax:0,pc:0}]; let lock=null;
+    let cur=0, runFor=0;
+    while(T.some(t=>t.i<N)){
+      if(runFor<=0 || T[cur].i>=N){ cur = T[1-cur].i<N ? (Math.random()<.5?cur:1-cur) : cur; if(T[cur].i>=N) cur=1-cur; runFor=1+Math.floor(Math.random()*40); }
+      const th=T[cur];
+      if(useLock){
+        if(th.pc===0){ if(lock!==null&&lock!==cur){runFor=0; continue} lock=cur; th.pc=1 }
+        else if(th.pc===1){th.eax=counter; th.pc=2} else if(th.pc===2){th.eax++; th.pc=3}
+        else if(th.pc===3){counter=th.eax; th.pc=4} else {lock=null; th.pc=0; th.i++}
+      } else {
+        if(th.pc===0){th.eax=counter; th.pc=1} else if(th.pc===1){th.eax++; th.pc=2} else {counter=th.eax; th.pc=0; th.i++}
+      }
+      runFor--;
+    }
+    const lost=2*N-counter;
+    host.querySelector("#mstats").innerHTML=`<div class="stat"><span class="label">Esperado</span><b>${(2*N).toLocaleString("es")}</b></div>
+      <div class="stat"><span class="label">Obtenido</span><b style="color:${lost?"var(--bad)":"var(--good)"}">${counter.toLocaleString("es")}</b></div>
+      <div class="stat"><span class="label">Actualizaciones perdidas</span><b>${lost.toLocaleString("es")}</b></div>
+      <div class="stat"><span class="label">Modo</span><b style="font-size:16px">${useLock?"con lock":"sin lock"}</b></div>`;
+  };
+  draw();
+}
+
+/* ---- RAID-4 ---- */
+function labRaid(host){
+  let data=[0b1011,0b0110,0b1100], failed=null;
+  host.innerHTML = `<div class="lab" style="${pc("pers")}">
+    <div><div class="label">Capítulo 38</div><h2>Paridad en RAID-4</h2></div>
+    <p class="intro">Tres discos de datos y uno de paridad. La paridad es el XOR de los bloques de datos. Pulsa un bit para cambiarlo y la paridad se recalcula. Después haz fallar un disco y observa cómo se reconstruye su contenido a partir del resto.</p>
+    <div class="scroll"><table class="t" id="raidt"></table></div>
+    <div class="controls" id="failc"></div>
+    <div id="rres"></div>
+  </div>`;
+  const bin=n=>n.toString(2).padStart(4,"0");
+  function draw(){
+    const par=data.reduce((a,b)=>a^b,0);
+    const disks=[...data.map((d,i)=>({n:`Disco ${i}`,v:d,i})),{n:"Paridad",v:par,i:3}];
+    host.querySelector("#raidt").innerHTML=`<tr><th>Disco</th><th>Bloque (4 bits)</th><th>Estado</th></tr>`+disks.map(d=>{
+      const dead=failed===d.i;
+      const bits=[...bin(d.v)].map((b,j)=>d.i<3&&!dead?`<button class="btn small mono" data-d="${d.i}" data-b="${3-j}" aria-label="Cambiar bit ${3-j} del disco ${d.i}">${b}</button>`:`<span class="bit ${d.i===3?"pfn":"off"}" style="display:inline-flex">${dead?"?":b}</span>`).join(" ");
+      return `<tr><td>${d.n}</td><td>${bits}</td><td style="color:${dead?"var(--bad)":"var(--good)"}">${dead?"averiado":"ok"}</td></tr>`}).join("");
+    host.querySelector("#failc").innerHTML=disks.map(d=>`<button class="btn small" data-f="${d.i}">${failed===d.i?"Reparar":"Hacer fallar"} ${d.n.toLowerCase()}</button>`).join("");
+    const r=host.querySelector("#rres");
+    if(failed===null){r.innerHTML=`<div class="result ok">Paridad = ${data.map(bin).join(" ⊕ ")} = ${bin(par)}</div>`}
+    else{
+      const others=disks.filter(d=>d.i!==failed), rec=others.reduce((a,d)=>a^d.v,0);
+      r.innerHTML=`<div class="result ok">Reconstrucción de ${disks[failed].n.toLowerCase()}: ${others.map(d=>bin(d.v)).join(" ⊕ ")} = <b>${bin(rec)}</b> ${rec===disks[failed].v?"(coincide con el original)":""}</div>`;
+    }
+  }
+  host.addEventListener("click",e=>{
+    const b=e.target.closest("[data-d]"); if(b){data[b.dataset.d]^=1<<b.dataset.b; draw(); return}
+    const f=e.target.closest("[data-f]"); if(f){failed = failed===+f.dataset.f?null:+f.dataset.f; draw()}
+  });
+  draw();
+}
+
+/* =================== REPASO =================== */
+let deck=[], idx=0, revealed=false;
+function buildDeck(){
+  const pool=C.filter(c=>!filter||c.p===filter);
+  const unk=pool.filter(c=>!known.has(c.id)), kn=pool.filter(c=>known.has(c.id));
+  const sh=a=>a.map(x=>[Math.random(),x]).sort((a,b)=>a[0]-b[0]).map(x=>x[1]);
+  deck=[...sh(unk),...sh(kn)]; idx=0; revealed=false;
+}
+function renderReview(){
+  if(!deck.length) buildDeck();
+  const c=deck[idx], el=$("#review"), poolN=deck.length, kn=deck.filter(x=>known.has(x.id)).length;
+  el.innerHTML=`
+    <div class="progress"><span class="label">Tarjeta ${idx+1} de ${poolN}${filter?" · "+PIECES[filter].name:""}</span><span class="count">${kn} de ${poolN} dominadas</span></div>
+    <div class="bar"><i style="width:${kn/poolN*100}%;background:var(--good)"></i></div>
+    <div class="card" style="${pc(c.p)}">
+      <div class="meta" style="display:flex;gap:8px"><span class="tag">${PIECES[c.p].name}</span><span class="tag">Cap. ${c.ch}</span></div>
+      <div class="q">${esc(c.crux)}</div>
+      ${revealed?`<div><h3 style="font-size:20px;margin-bottom:6px;color:var(--pc)">${esc(c.t)}</h3><p style="margin:0">${esc(c.d)}</p></div>`
+        :`<p class="count" style="margin:0">¿Qué concepto del libro responde a esta pregunta? Piénsalo y después muestra la respuesta.</p>`}
+      <div class="actions">${revealed
+        ?`<button class="btn" data-a="again">Repasar otra vez</button><button class="btn primary" data-a="know">Lo sé</button><button class="btn" data-a="open">Ver en conceptos</button>`
+        :`<button class="btn primary" data-a="show">Mostrar respuesta</button><button class="btn" data-a="skip">Saltar</button>`}</div>
+    </div>
+    <div class="actions"><button class="btn small" data-a="shuffle">Barajar de nuevo</button><button class="btn small" data-a="resetk">Borrar progreso</button></div>`;
+}
+$("#review").addEventListener("click",e=>{
+  const a=e.target.closest("[data-a]")?.dataset.a; if(!a) return;
+  const c=deck[idx];
+  if(a==="show"){revealed=true}
+  else if(a==="know"){known.add(c.id); store.set("known",[...known]); next()}
+  else if(a==="again"){known.delete(c.id); store.set("known",[...known]); next()}
+  else if(a==="skip"){next()}
+  else if(a==="open"){select(c.id); showView("explorar"); return}
+  else if(a==="shuffle"){buildDeck()}
+  else if(a==="resetk"){known=new Set(); store.set("known",[]); buildDeck()}
+  renderReview(); renderList(); renderPieces();
+});
+function next(){idx=(idx+1)%deck.length; revealed=false}
+document.querySelector('[data-view="repaso"]').addEventListener("click",()=>{buildDeck(); renderReview()});
+
+/* ---- Inicio ---- */
+renderPieces(); renderList(); renderDetail(); renderLabNav(); openLab(curLab,false); buildDeck(); renderReview();
+const v0=store.get("view","explorar"); if(["explorar","lab","repaso"].includes(v0)) showView(v0);
+</script>
