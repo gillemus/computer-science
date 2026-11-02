@@ -5,8 +5,8 @@
 <style>
 :root{
   --bg:#EDF0F3; --surface:#FFFFFF; --sunk:#E2E7EC; --ink:#16202B; --muted:#5A6878; --line:#CBD3DC;
-  --virt:#0E7C74; --conc:#B4560B; --pers:#7B3FA8;
-  --virt-soft:#D5EEEB; --conc-soft:#F8E6D3; --pers-soft:#ECDDF6;
+  --virt:#0E7C74; --conc:#B4560B; --pers:#7B3FA8; --seg:#B02A4E;
+  --virt-soft:#D5EEEB; --conc-soft:#F8E6D3; --pers-soft:#ECDDF6; --seg-soft:#F7DDE4;
   --good:#1F7A3A; --bad:#B42318; --good-soft:#DDF2E3; --bad-soft:#FBE2DF;
   --display:"Bricolage Grotesque", "Segoe UI", system-ui, sans-serif;
   --body:"IBM Plex Sans", "Segoe UI", system-ui, sans-serif;
@@ -16,16 +16,16 @@
   :root:not([data-theme="light"]){
     color-scheme:dark;
     --bg:#11161C; --surface:#1A212A; --sunk:#232C37; --ink:#E6EBF0; --muted:#97A4B3; --line:#33404E;
-    --virt:#3CC2B5; --conc:#F0964A; --pers:#BB8AE6;
-    --virt-soft:#173A38; --conc-soft:#3D2A17; --pers-soft:#33224A;
+    --virt:#3CC2B5; --conc:#F0964A; --pers:#BB8AE6; --seg:#F27A9B;
+    --virt-soft:#173A38; --conc-soft:#3D2A17; --pers-soft:#33224A; --seg-soft:#3F1C27;
     --good:#5CC97C; --bad:#F2796B; --good-soft:#18331F; --bad-soft:#3C1E1A;
   }
 }
 :root[data-theme="dark"]{
   color-scheme:dark;
   --bg:#11161C; --surface:#1A212A; --sunk:#232C37; --ink:#E6EBF0; --muted:#97A4B3; --line:#33404E;
-  --virt:#3CC2B5; --conc:#F0964A; --pers:#BB8AE6;
-  --virt-soft:#173A38; --conc-soft:#3D2A17; --pers-soft:#33224A;
+  --virt:#3CC2B5; --conc:#F0964A; --pers:#BB8AE6; --seg:#F27A9B;
+  --virt-soft:#173A38; --conc-soft:#3D2A17; --pers-soft:#33224A; --seg-soft:#3F1C27;
   --good:#5CC97C; --bad:#F2796B; --good-soft:#18331F; --bad-soft:#3C1E1A;
 }
 *{box-sizing:border-box}
@@ -41,15 +41,15 @@ button,input,select{font:inherit;color:inherit}
 header.top{padding-block:40px 24px;display:grid;gap:20px}
 header.top h1{font-size:clamp(38px,7vw,72px);font-weight:800;letter-spacing:-.02em}
 header.top h1 span{display:inline-block}
-header.top h1 .v{color:var(--virt)} header.top h1 .c{color:var(--conc)} header.top h1 .p{color:var(--pers)}
+header.top h1 .v{color:var(--virt)} header.top h1 .c{color:var(--conc)} header.top h1 .p{color:var(--pers)} header.top h1 .s{color:var(--seg)}
 header.top p{max-width:62ch;color:var(--muted);margin:0;font-size:16px}
-.pieces{display:grid;grid-template-columns:repeat(3,1fr);gap:12px}
+.pieces{display:grid;grid-template-columns:repeat(4,1fr);gap:12px}
 .piece{border:1px solid var(--line);background:var(--surface);border-radius:10px;padding:14px 16px;text-align:left;cursor:pointer;display:grid;gap:4px;transition:transform .15s,border-color .15s}
 .piece:hover{transform:translateY(-2px)}
 .piece[aria-pressed="true"]{border-color:var(--pc);box-shadow:inset 0 0 0 1px var(--pc)}
 .piece b{font-family:var(--display);font-size:20px;color:var(--pc)}
 .piece small{color:var(--muted);font-size:13px;line-height:1.4}
-.piece .ch{font-family:var(--mono);font-size:12px;color:var(--muted)}
+.piece .ch{font-family:var(--mono);font-size:12px;color:var(--muted);margin-top:auto}
 
 /* Pestañas */
 nav.tabs{position:sticky;top:env(safe-area-inset-top,0px);z-index:5;background:var(--bg);display:flex;gap:4px;padding-block:10px;border-bottom:1px solid var(--line);overflow-x:auto}
@@ -158,6 +158,14 @@ table.t td.inv{color:var(--muted)}
 .cmp{display:grid;gap:8px}
 .cmp div{display:grid;grid-template-columns:70px 1fr 64px;gap:10px;align-items:center;font-family:var(--mono);font-size:13px}
 
+.perm{display:flex;flex-wrap:wrap;gap:4px;align-items:center}
+.perm .grp{display:inline-flex;gap:3px;padding:4px;border-radius:6px;background:var(--sunk)}
+.perm .grp.on{box-shadow:inset 0 0 0 2px var(--seg)}
+.perm button{width:30px;height:34px;border:1px solid var(--line);border-radius:4px;background:var(--surface);cursor:pointer;font-family:var(--mono);font-weight:600}
+.perm button[aria-pressed="true"]{background:var(--seg);border-color:var(--seg);color:var(--surface)}
+.hash{font-family:var(--mono);font-size:12px;word-break:break-all;background:var(--sunk);border-radius:6px;padding:8px 10px}
+.hash.same{background:var(--bad-soft);color:var(--bad)}
+
 /* Repaso */
 .review{max-width:680px;margin:0 auto;display:grid;gap:16px}
 .card{background:var(--surface);border:1px solid var(--line);border-top:4px solid var(--pc);border-radius:12px;padding:26px;display:grid;gap:14px;min-height:260px}
@@ -171,6 +179,7 @@ footer a{color:inherit}
   .explorer,.twocol{grid-template-columns:1fr}
   .detail{position:static}
   .threads{grid-template-columns:1fr}
+  .pieces{grid-template-columns:repeat(2,1fr)}
 }
 @media (max-width:560px){
   .pieces{grid-template-columns:1fr}
@@ -181,8 +190,8 @@ footer a{color:inherit}
 <div class="wrap">
   <header class="top">
     <div class="label">Operating Systems: Three Easy Pieces · Arpaci-Dusseau</div>
-    <h1><span class="v">Virtualización.</span> <span class="c">Concurrencia.</span> <span class="p">Persistencia.</span></h1>
-    <p>Los conceptos principales del libro de sistemas operativos que usa el currículo OSSU, organizados en sus tres piezas. Explora cada concepto, juega con los simuladores y repasa con tarjetas.</p>
+    <h1><span class="v">Virtualización.</span> <span class="c">Concurrencia.</span> <span class="p">Persistencia.</span> <span class="s">Seguridad.</span></h1>
+    <p>Los conceptos principales del libro de sistemas operativos que usa el currículo OSSU, organizados en sus tres piezas más la parte de seguridad. Explora cada concepto, juega con los simuladores y repasa con tarjetas.</p>
     <div class="pieces" id="pieces"></div>
   </header>
 
@@ -221,7 +230,8 @@ footer a{color:inherit}
 const PIECES = {
   virt:{name:"Virtualización", chapters:"Cap. 4–24", blurb:"Cómo el SO convierte una CPU y una memoria en muchas CPU y memorias virtuales."},
   conc:{name:"Concurrencia", chapters:"Cap. 26–34", blurb:"Cómo coordinar varios hilos que comparten memoria sin corromper los datos."},
-  pers:{name:"Persistencia", chapters:"Cap. 36–51", blurb:"Cómo guardar datos de forma fiable en discos y SSD, incluso tras una caída."}
+  pers:{name:"Persistencia", chapters:"Cap. 36–49", blurb:"Cómo guardar datos de forma fiable en discos y SSD, incluso tras una caída."},
+  seg:{name:"Seguridad", chapters:"Cap. 53–57", blurb:"Cómo protege el SO los datos y recursos frente a usuarios y programas malintencionados."}
 };
 
 const C = [
@@ -373,7 +383,33 @@ const C = [
  {id:"distribuidos",p:"pers",t:"Sistemas distribuidos: NFS y AFS",ch:"47–49",crux:"¿Cómo construir sistemas que sigan funcionando cuando fallan sus componentes?",
   d:"La comunicación es poco fiable, así que se usan acuses de recibo, reintentos y RPC. NFS usa un protocolo sin estado con operaciones idempotentes. AFS guarda ficheros completos en caché y usa callbacks.",
   k:["La idempotencia simplifica la recuperación","Coherencia de caché: NFS por sondeo, AFS con callbacks","Semántica al cerrar el fichero (AFS)"],
-  r:["ficheros"]}
+  r:["ficheros","seg-distribuida"]},
+
+ // ---------- Seguridad ----------
+ {id:"seg-objetivos",p:"seg",t:"Objetivos de seguridad y amenazas",ch:"53",crux:"¿Cómo protegemos el sistema operativo y lo que gestiona?",
+  d:"La seguridad busca tres propiedades: confidencialidad (nadie lee lo que no debe), integridad (nadie modifica lo que no debe) y disponibilidad (el servicio sigue funcionando). El SO es la base de confianza: si cae, cae todo lo que se ejecuta encima.",
+  k:["Confidencialidad, integridad y disponibilidad (CIA)","Política (qué se permite) frente a mecanismo (cómo se impone)","Base de computación de confianza (TCB): todo aquello en lo que hay que confiar","Las amenazas vienen de usuarios, programas y otras máquinas"],
+  r:["seg-principios","autenticacion","control-acceso"]},
+ {id:"seg-principios",p:"seg",t:"Principios de diseño seguro",ch:"53",crux:"¿Qué reglas generales llevan a sistemas más seguros?",
+  d:"Los principios de Saltzer y Schroeder: economía del mecanismo, valores por defecto seguros (denegar si no se permite), mediación completa (comprobar cada acceso), diseño abierto, separación de privilegios, mínimo privilegio, mecanismo común mínimo y aceptabilidad psicológica.",
+  k:["Mínimo privilegio: cada programa con los permisos justos","Mediación completa: no cachear decisiones de acceso sin pensarlo","Diseño abierto: la seguridad no debe depender del secreto del diseño","Si es incómodo de usar, los usuarios lo evitarán"],
+  r:["seg-objetivos","control-acceso"]},
+ {id:"autenticacion",p:"seg",t:"Autenticación",ch:"54",crux:"¿Cómo sabe el SO quién está pidiendo un servicio?",
+  d:"Se identifica a un principal por algo que sabe (contraseña), algo que tiene (token, móvil) o algo que es (biometría). Las contraseñas no se guardan en claro: se guarda un hash con sal, de modo que robar el fichero no revela las contraseñas.",
+  k:["La sal impide los ataques con tablas precalculadas y oculta contraseñas repetidas","Hashes lentos (bcrypt, scrypt, Argon2) frenan la fuerza bruta","La autenticación multifactor combina varios tipos","Una vez autenticado, el proceso hereda la identidad del usuario"],
+  r:["control-acceso","criptografia"],lab:"salt"},
+ {id:"control-acceso",p:"seg",t:"Control de acceso",ch:"55",crux:"¿Cómo decide el SO si un principal puede realizar una operación sobre un objeto?",
+  d:"Conceptualmente es una matriz de principales por objetos. Las listas de control de acceso (ACL) la guardan por columnas, junto al objeto; las capacidades la guardan por filas, junto al principal. UNIX usa una ACL reducida: bits rwx para propietario, grupo y otros.",
+  k:["ACL: fácil saber quién accede a un objeto; difícil revocar a un usuario","Capacidades: fáciles de delegar; hay que impedir que se falsifiquen","setuid ejecuta un programa con la identidad de su propietario","DAC (decide el propietario), MAC (decide el sistema) y RBAC (por roles)"],
+  r:["autenticacion","seg-principios","ficheros"],lab:"perm"},
+ {id:"criptografia",p:"seg",t:"Criptografía",ch:"56",crux:"¿Cómo proteger datos que salen del control del SO?",
+  d:"El cifrado simétrico (AES) usa la misma clave para cifrar y descifrar y es rápido. El asimétrico (RSA, curvas elípticas) usa un par de claves pública y privada y permite firmas digitales. Los hashes criptográficos (SHA-256) resumen datos y detectan cambios.",
+  k:["La seguridad está en la clave, no en el algoritmo (principio de Kerckhoffs)","El asimétrico suele usarse para intercambiar una clave simétrica","Cifrar el disco protege los datos si roban el equipo","Gestionar y distribuir las claves es lo difícil"],
+  r:["autenticacion","seg-distribuida","integridad"],lab:"salt"},
+ {id:"seg-distribuida",p:"seg",t:"Seguridad en sistemas distribuidos",ch:"57",crux:"¿Cómo proteger la comunicación cuando no controlamos la red?",
+  d:"En la red no hay un SO que imponga las reglas: los mensajes pueden leerse, alterarse o falsificarse. Se usan protocolos como TLS, que autentican al servidor con certificados firmados por autoridades (PKI), acuerdan una clave de sesión y cifran el tráfico.",
+  k:["Ataque de intermediario (man-in-the-middle)","Certificados y autoridades de certificación","Ataques de repetición: se evitan con nonces y marcas de tiempo","Cortafuegos y VPN delimitan qué tráfico se acepta"],
+  r:["criptografia","distribuidos"]}
 ];
 const byId = Object.fromEntries(C.map(c=>[c.id,c]));
 
@@ -395,7 +431,7 @@ function renderPieces(){
   $("#pieces").innerHTML = Object.entries(PIECES).map(([k,v])=>{
     const n = C.filter(c=>c.p===k).length, kn = C.filter(c=>c.p===k && known.has(c.id)).length;
     return `<button class="piece" style="${pc(k)}" data-p="${k}" aria-pressed="${filter===k}">
-      <b>${v.name}</b><small>${v.blurb}</small><span class="ch">${v.chapters} · ${n} conceptos · ${kn} dominados</span></button>`;
+      <b>${v.name}</b><small>${v.blurb}</small><span class="ch">${v.chapters}<br>${n} conceptos · ${kn} dominados</span></button>`;
   }).join("");
 }
 $("#pieces").addEventListener("click",e=>{
@@ -463,7 +499,9 @@ const LABS = {
   paging:{p:"virt",t:"Traducción con paginación",s:"VPN, PFN y TLB",render:labPaging},
   repl:{p:"virt",t:"Reemplazo de páginas",s:"FIFO · LRU · Óptimo",render:labRepl},
   race:{p:"conc",t:"Condición de carrera",s:"contador++ con y sin lock",render:labRace},
-  raid:{p:"pers",t:"Paridad en RAID-4",s:"Reconstruye un disco con XOR",render:labRaid}
+  raid:{p:"pers",t:"Paridad en RAID-4",s:"Reconstruye un disco con XOR",render:labRaid},
+  perm:{p:"seg",t:"Permisos UNIX",s:"rwx, propietario, grupo y otros",render:labPerm},
+  salt:{p:"seg",t:"Contraseñas con sal",s:"Hash SHA-256 con y sin sal",render:labSalt}
 };
 let curLab = store.get("lab","sched"); if(!LABS[curLab]) curLab="sched";
 function renderLabNav(){
@@ -762,6 +800,99 @@ function labRace(host){
       <div class="stat"><span class="label">Actualizaciones perdidas</span><b>${lost.toLocaleString("es")}</b></div>
       <div class="stat"><span class="label">Modo</span><b style="font-size:16px">${useLock?"con lock":"sin lock"}</b></div>`;
   };
+  draw();
+}
+
+/* ---- Permisos UNIX ---- */
+function labPerm(host){
+  const users={alice:{g:["dev"]},bob:{g:["dev"]},carol:{g:["ventas"]},root:{g:["root"]}};
+  let mode=0o640, owner="alice", group="dev", who="bob", op="r";
+  host.innerHTML = `<div class="lab" style="${pc("seg")}">
+    <div><div class="label">Capítulo 55</div><h2>Permisos UNIX</h2></div>
+    <p class="intro">UNIX guarda junto a cada fichero una lista de control de acceso reducida: tres bits (lectura, escritura, ejecución) para el propietario, el grupo y el resto. El núcleo comprueba solo una de las tres clases, la primera que encaja con quien pide el acceso. root se salta las comprobaciones de lectura y escritura.</p>
+    <div class="controls">
+      <div class="field"><span class="label">Permisos de informe.txt</span><div class="perm" id="bits"></div></div>
+    </div>
+    <div class="controls">
+      <div class="field"><label class="label" for="powner">Propietario</label><select id="powner">${Object.keys(users).filter(u=>u!=="root").map(u=>`<option ${u===owner?"selected":""}>${u}</option>`).join("")}</select></div>
+      <div class="field"><label class="label" for="pgroup">Grupo</label><select id="pgroup">${["dev","ventas"].map(g=>`<option ${g===group?"selected":""}>${g}</option>`).join("")}</select></div>
+      <div class="field"><label class="label" for="pwho">Quién accede</label><select id="pwho">${Object.entries(users).map(([u,v])=>`<option value="${u}" ${u===who?"selected":""}>${u} (grupo ${v.g[0]})</option>`).join("")}</select></div>
+      <div class="field"><span class="label">Operación</span><div class="seg" id="pop">${[["r","Leer"],["w","Escribir"],["x","Ejecutar"]].map(([v,l])=>`<button data-v="${v}">${l}</button>`).join("")}</div></div>
+    </div>
+    <div class="mono" id="pls" style="font-size:14px"></div>
+    <div id="pres2"></div>
+    <ol class="steps" id="psteps2"></ol>
+  </div>`;
+  const cls=["propietario","grupo","otros"], L="rwx";
+  host.querySelector("#powner").onchange=e=>{owner=e.target.value;draw()};
+  host.querySelector("#pgroup").onchange=e=>{group=e.target.value;draw()};
+  host.querySelector("#pwho").onchange=e=>{who=e.target.value;draw()};
+  host.querySelector("#pop").addEventListener("click",e=>{const b=e.target.closest("button"); if(b){op=b.dataset.v;draw()}});
+  host.querySelector("#bits").addEventListener("click",e=>{const b=e.target.closest("[data-bit]"); if(b){mode^=1<<+b.dataset.bit;draw()}});
+  function draw(){
+    host.querySelectorAll("#pop button").forEach(b=>b.setAttribute("aria-pressed",b.dataset.v===op));
+    const c = who==="root"?-1 : who===owner?0 : users[who].g.includes(group)?1:2;
+    host.querySelector("#bits").innerHTML=cls.map((n,i)=>`<span class="grp ${i===c?"on":""}" title="${n}">${[...L].map((l,j)=>{const bit=8-(i*3+j);return `<button data-bit="${bit}" aria-pressed="${!!(mode>>bit&1)}" aria-label="${n}: ${l}">${mode>>bit&1?l:"-"}</button>`}).join("")}</span>`).join("")
+      +`<span class="mono" style="margin-left:8px">${mode.toString(8).padStart(3,"0")}</span>`;
+    const str=[...Array(9)].map((_,k)=>mode>>(8-k)&1?L[k%3]:"-").join("");
+    host.querySelector("#pls").textContent=`$ ls -l informe.txt\n-${str}  1 ${owner} ${group}  2048 nov  2 10:14 informe.txt`;
+    host.querySelector("#pls").style.whiteSpace="pre-wrap";
+    const steps=[], opn={r:"leer",w:"escribir",x:"ejecutar"}[op];
+    let ok;
+    if(c<0){ const anyX=mode&0o111; ok = op!=="x" || !!anyX;
+      steps.push(`Quien accede es root (UID 0): se saltan las comprobaciones de lectura y escritura.`);
+      if(op==="x") steps.push(`Para ejecutar, root necesita que al menos una clase tenga el bit x: ${anyX?"lo tiene":"ninguna lo tiene"}.`);
+    } else {
+      steps.push(`¿${who} es el propietario (${owner})? ${c===0?"Sí: se usan los bits del propietario.":"No."}`);
+      if(c>0) steps.push(`¿${who} pertenece al grupo ${group}? ${c===1?"Sí: se usan los bits del grupo.":"No: se usan los bits de otros."}`);
+      const bit=8-(c*3+"rwx".indexOf(op)); ok=!!(mode>>bit&1);
+      steps.push(`Bit ${op} de ${cls[c]}: ${ok?"activo":"inactivo"}. No se consultan las demás clases, aunque den más permisos.`);
+    }
+    host.querySelector("#psteps2").innerHTML=steps.map(s=>`<li>${esc(s)}</li>`).join("");
+    host.querySelector("#pres2").innerHTML=`<div class="result ${ok?"ok":"err"}">${ok?`Permitido: ${who} puede ${opn} informe.txt`:`Denegado: open() devuelve EACCES (Permission denied)`}</div>`;
+  }
+  draw();
+}
+
+/* ---- Contraseñas con sal ---- */
+function labSalt(host){
+  const rows=[{u:"alice",pw:"verano2024",salt:"9f3a1c"},{u:"bob",pw:"verano2024",salt:"e27b40"},{u:"carol",pw:"Tq!7m#Lx2",salt:"51d8aa"}];
+  let useSalt=false;
+  host.innerHTML = `<div class="lab" style="${pc("seg")}">
+    <div><div class="label">Capítulos 54 y 56</div><h2>Contraseñas con sal</h2></div>
+    <p class="intro">El sistema no guarda tu contraseña, sino su hash. Sin sal, dos usuarios con la misma contraseña tienen el mismo hash y un atacante puede usar tablas precalculadas. Con una sal aleatoria por usuario, cada hash es distinto. Cambia las contraseñas y observa la tabla (los hashes son SHA-256 reales, calculados en tu navegador).</p>
+    <div class="controls"><div class="field"><span class="label">Almacenamiento</span><div class="seg" id="smode"><button data-v="0">Sin sal</button><button data-v="1">Con sal</button></div></div></div>
+    <div class="scroll"><table class="t" id="st"></table></div>
+    <div id="sres"></div>
+    <div style="display:grid;gap:8px;max-width:520px">
+      <span class="label">Inicia sesión como alice</span>
+      <div class="controls"><div class="field" style="flex:1 1 200px"><label class="label" for="login">Contraseña</label><input id="login" type="text" placeholder="Prueba con verano2024"></div><button class="btn primary" id="lbtn">Comprobar</button></div>
+      <div id="lres"></div>
+    </div>
+  </div>`;
+  const hex=async str=>{
+    try{const b=await crypto.subtle.digest("SHA-256",new TextEncoder().encode(str)); return [...new Uint8Array(b)].map(x=>x.toString(16).padStart(2,"0")).join("")}
+    catch(e){ let h=2166136261; for(const ch of str){h^=ch.charCodeAt(0); h=Math.imul(h,16777619)>>>0} return "fnv1a-"+h.toString(16) }
+  };
+  const stored=r=>useSalt?r.salt+r.pw:r.pw;
+  host.querySelector("#smode").addEventListener("click",e=>{const b=e.target.closest("button"); if(b){useSalt=b.dataset.v==="1"; draw()}});
+  host.querySelector("#st").addEventListener("input",e=>{const i=e.target.dataset.i; if(i!==undefined){rows[i].pw=e.target.value; draw(false)}});
+  host.querySelector("#lbtn").onclick=async()=>{
+    const pw=host.querySelector("#login").value, r=rows[0];
+    const h=await hex(useSalt?r.salt+pw:pw), ok=h===await hex(stored(r));
+    host.querySelector("#lres").innerHTML=`<div class="hash">${useSalt?`SHA-256("${esc(r.salt)}" + "${esc(pw)}")`:`SHA-256("${esc(pw)}")`} = ${h.slice(0,32)}…</div>
+      <div class="result ${ok?"ok":"err"}" style="margin-top:8px">${ok?"Coincide con el hash guardado: acceso concedido":"No coincide: acceso denegado"}</div>`;
+  };
+  async function draw(full=true){
+    host.querySelectorAll("#smode button").forEach(b=>b.setAttribute("aria-pressed",(b.dataset.v==="1")===useSalt));
+    const hs=await Promise.all(rows.map(r=>hex(stored(r))));
+    const dup=h=>hs.filter(x=>x===h).length>1;
+    if(full) host.querySelector("#st").innerHTML=`<tr><th>Usuario</th><th>Contraseña (el SO no la guarda)</th>${useSalt?"<th>Sal</th>":""}<th>Hash guardado en /etc/shadow</th></tr>`+
+      rows.map((r,i)=>`<tr><td>${r.u}</td><td><input aria-label="Contraseña de ${r.u}" data-i="${i}" value="${esc(r.pw)}" style="width:130px;padding:4px 6px;border:1px solid var(--line);border-radius:4px;background:var(--bg)"></td>${useSalt?`<td>${r.salt}</td>`:""}<td><div class="hash" data-h="${i}"></div></td></tr>`).join("");
+    hs.forEach((h,i)=>{const d=host.querySelector(`[data-h="${i}"]`); d.textContent=h.slice(0,32)+"…"; d.classList.toggle("same",dup(h))});
+    const anyDup=hs.some(dup);
+    host.querySelector("#sres").innerHTML=`<div class="result ${anyDup?"err":"ok"}">${anyDup?"Hay hashes repetidos: quien robe el fichero sabe que esos usuarios comparten contraseña, y basta descifrar una.":"Todos los hashes son distintos: el atacante tiene que atacar cada cuenta por separado."}</div>`;
+  }
   draw();
 }
 
