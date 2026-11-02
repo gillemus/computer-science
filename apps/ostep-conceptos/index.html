@@ -229,6 +229,9 @@ table.t td.inv{color:var(--muted)}
 .explain{border-left:3px solid var(--virt);padding:4px 0 4px 12px;margin:0;max-width:70ch}
 @media (max-width:820px){.procgrid{grid-template-columns:1fr}}
 
+.sync{display:flex;align-items:center;gap:8px;font-size:13px;color:var(--muted);margin:0}
+.sync::before{content:"";width:8px;height:8px;border-radius:50%;background:var(--sd,var(--muted));flex:none}
+
 /* Repaso */
 .review{max-width:680px;margin:0 auto;display:grid;gap:16px}
 .review > .seg{justify-self:start}
@@ -260,6 +263,7 @@ footer a{color:inherit}
     <h1><span class="v">Virtualización.</span> <span class="c">Concurrencia.</span> <span class="p">Persistencia.</span> <span class="s">Seguridad.</span></h1>
     <p>Los conceptos principales del libro de sistemas operativos que usa el currículo OSSU, organizados en sus tres piezas más la parte de seguridad. Explora cada concepto, juega con los simuladores y repasa con tarjetas.</p>
     <div class="pieces" id="pieces"></div>
+    <p class="sync" id="sync" aria-live="polite">Progreso guardado en este navegador.</p>
   </header>
 
   <nav class="tabs" role="tablist" aria-label="Secciones">
@@ -579,6 +583,65 @@ const store = {
   set(k,v){try{localStorage.setItem("ostep:"+k,JSON.stringify(v))}catch(e){}}
 };
 let known = new Set(store.get("known",[]));
+
+/* ---- Sincronización del progreso con la cuenta del lector ----
+   El navegador guarda una copia para pintar al instante; la copia de la
+   cuenta (data/users/<id>/progress) es la que manda cuando está disponible. */
+const sync = {ref:null, writing:false, dirty:false};
+function syncStatus(text,color){const el=$("#sync"); if(!el) return; el.textContent=text; el.style.setProperty("--sd",color)}
+function saveKnown(){
+  store.set("known",[...known]);
+  if(sync.ref){ sync.dirty=true; flushKnown() }
+}
+async function flushKnown(){
+  if(sync.writing||!sync.dirty) return;
+  sync.writing=true; sync.dirty=false;
+  try{
+    await sync.ref.set({known:[...known].sort(), updatedAt:new Date().toISOString()});
+    syncStatus("Progreso sincronizado con tu cuenta: lo verás igual en todos tus dispositivos.","var(--good)");
+  }catch(e){
+    syncStatus("No se ha podido guardar en tu cuenta; el progreso queda en este navegador.","var(--bad)");
+  }
+  sync.writing=false;
+  if(sync.dirty) flushKnown();
+}
+function applyKnown(list){
+  const next=new Set(list.filter(id=>byId[id]));
+  if(next.size===known.size && [...next].every(id=>known.has(id))) return;
+  known=next; store.set("known",[...known]);
+  renderPieces(); renderList(); renderDetail();
+  if(!$("#view-repaso").hidden) renderReview();
+}
+async function startSync(){
+  if(!window.claude?.use){ syncStatus("Progreso guardado solo en este navegador.","var(--muted)"); return }
+  syncStatus("Conectando con tu cuenta…","var(--conc)");
+  const [db,user]=await Promise.all([claude.use("db"),claude.use("user")]);
+  const uid = user ? await user.id() : null;
+  if(!db||!uid){ syncStatus("Progreso guardado solo en este navegador. Inicia sesión en claude.ai para sincronizarlo entre dispositivos.","var(--muted)"); return }
+  const ref=db.doc("data/users/"+uid+"/progress");
+  let timer=setTimeout(()=>syncStatus("Tu cuenta no responde todavía; el progreso se guarda en este navegador mientras tanto.","var(--conc)"),10000);
+  try{
+    const snap=await ref.get();
+    const cloud = snap.exists && Array.isArray(snap.data().known) ? snap.data().known : null;
+    sync.ref=ref;
+    // La primera vez en este navegador se suma lo marcado aquí a lo de la cuenta.
+    const firstTime=!store.get("synced",false);
+    if(cloud===null || firstTime){
+      const merged=new Set([...(cloud||[]),...known]);
+      applyKnown([...merged]);
+      if(cloud===null || merged.size!==cloud.length){ sync.dirty=true; await flushKnown() }
+      store.set("synced",true);
+    } else applyKnown(cloud);
+    clearTimeout(timer);
+    syncStatus("Progreso sincronizado con tu cuenta: lo verás igual en todos tus dispositivos.","var(--good)");
+    ref.onSnapshot(s=>{
+      if(s.exists && !s.metadata.hasPendingWrites && Array.isArray(s.data().known)) applyKnown(s.data().known);
+    },()=>{ sync.ref=null; syncStatus("Se ha perdido la conexión con tu cuenta; el progreso se guarda en este navegador.","var(--conc)") });
+  }catch(e){
+    clearTimeout(timer); sync.ref=null;
+    syncStatus("No se ha podido leer tu progreso de la cuenta; se guarda en este navegador.","var(--conc)");
+  }
+}
 let filter = null; // pieza activa
 let current = location.hash.slice(1) && byId[location.hash.slice(1)] ? location.hash.slice(1) : "paginacion";
 
@@ -683,7 +746,7 @@ $("#detail").addEventListener("click",e=>{
   const r=e.target.closest(".related button, .linkbtn"); if(r){select(r.dataset.id);return}
   if(e.target.id==="toggleKnown"){
     known.has(current)?known.delete(current):known.add(current);
-    store.set("known",[...known]); renderList(); renderDetail(); renderPieces();
+    saveKnown(); renderList(); renderDetail(); renderPieces();
   }
   const l=e.target.closest("[data-lab]"); if(l){openLab(l.dataset.lab)}
 });
@@ -1288,7 +1351,7 @@ function labRaid(host){
 }
 
 /* =================== REPASO =================== */
-let deck=[], idx=0, revealed=false, rmode="c";
+let confirmReset=false, deck=[], idx=0, revealed=false, rmode="c";
 function buildDeck(){
   const pool=C.filter(c=>!filter||c.p===filter);
   const unk=pool.filter(c=>!known.has(c.id)), kn=pool.filter(c=>known.has(c.id));
@@ -1328,7 +1391,7 @@ function renderReview(){
         ?`<button class="btn" data-a="again">Repasar otra vez</button><button class="btn primary" data-a="know">Lo sé</button><button class="btn" data-a="open">Ver en conceptos</button>`
         :`<button class="btn primary" data-a="show">Mostrar respuesta</button><button class="btn" data-a="skip">Saltar</button>`}</div>
     </div>
-    <div class="actions"><button class="btn small" data-a="shuffle">Barajar de nuevo</button><button class="btn small" data-a="resetk">Borrar progreso</button></div>`;
+    <div class="actions"><button class="btn small" data-a="shuffle">Barajar de nuevo</button><button class="btn small" data-a="resetk">${confirmReset?"Pulsa otra vez para borrar el progreso en todos tus dispositivos":"Borrar progreso"}</button></div>`;
 }
 $("#review").addEventListener("click",e=>{
   const a=e.target.closest("[data-a]")?.dataset.a; if(!a) return;
@@ -1336,12 +1399,14 @@ $("#review").addEventListener("click",e=>{
   if(a==="mode-c"||a==="mode-l"){rmode=a.slice(-1); buildDeck()}
   else if(a==="thread"){gotoStep(c.id); return}
   else if(a==="show"){revealed=true}
-  else if(a==="know"){known.add(c.id); store.set("known",[...known]); next()}
-  else if(a==="again"){known.delete(c.id); store.set("known",[...known]); next()}
+  else if(a==="know"){known.add(c.id); saveKnown(); next()}
+  else if(a==="again"){known.delete(c.id); saveKnown(); next()}
   else if(a==="skip"){next()}
   else if(a==="open"){select(c.id); showView("explorar"); return}
   else if(a==="shuffle"){buildDeck()}
-  else if(a==="resetk"){known=new Set(); store.set("known",[]); buildDeck()}
+  else if(a==="resetk"){
+    if(!confirmReset){confirmReset=true; renderReview(); return}
+    confirmReset=false; known=new Set(); saveKnown(); buildDeck()}
   renderReview(); renderList(); renderPieces();
 });
 function next(){idx=(idx+1)%deck.length; revealed=false}
@@ -1349,6 +1414,7 @@ document.querySelector('[data-view="repaso"]').addEventListener("click",()=>{bui
 
 /* ---- Inicio ---- */
 renderPieces(); renderList(); renderDetail(); renderLabNav(); openLab(curLab,false); buildDeck(); renderReview();
+startSync();
 renderStory();
 const v0=store.get("view","explorar"); if(["explorar","hilo","lab","repaso"].includes(v0)) showView(v0);
 </script>
