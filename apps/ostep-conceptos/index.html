@@ -201,6 +201,8 @@ table.t td.inv{color:var(--muted)}
 
 :root{--term-bg:#0F1720;--term-fg:#D7E3EE;--term-dim:#7F93A6;--term-ok:#7FD69B}
 .procgrid{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:18px}
+.procgrid > div{min-width:0;grid-template-columns:minmax(0,1fr)}
+.thread .tag{justify-self:start}
 .acts{display:grid;gap:10px}
 .actrow{display:flex;flex-wrap:wrap;gap:8px;align-items:center}
 .actrow .who{font-family:var(--mono);font-size:12px;color:var(--muted);min-width:118px}
@@ -231,6 +233,22 @@ table.t td.inv{color:var(--muted)}
 
 .sync{display:flex;align-items:center;gap:8px;font-size:13px;color:var(--muted);margin:0}
 .sync::before{content:"";width:8px;height:8px;border-radius:50%;background:var(--sd,var(--muted));flex:none}
+
+.cpu{display:grid;gap:12px;border:1px solid var(--line);border-radius:10px;padding:14px 16px;background:var(--bg)}
+.modebadge{display:inline-flex;align-items:center;gap:8px;font-family:var(--display);font-weight:800;font-size:22px;letter-spacing:.02em;padding:6px 14px;border-radius:8px;color:var(--surface);background:var(--mc);transition:background .2s}
+.cpu .row{display:flex;flex-wrap:wrap;gap:10px 18px;align-items:center;font-size:14px}
+.pips{display:inline-flex;gap:3px;vertical-align:middle}
+.pips i{width:12px;height:12px;border-radius:2px;background:var(--sunk);border:1px solid var(--line)}
+.pips i.on{background:var(--conc);border-color:var(--conc)}
+.tl{display:flex;gap:2px;overflow-x:auto;padding-bottom:4px}
+.tl span{flex:none;width:22px;height:30px;border-radius:3px;display:grid;place-items:center;font-family:var(--mono);font-size:11px;font-weight:600;color:var(--surface)}
+.tl span.k{background:var(--pers)} .tl span.idle{background:var(--sunk);color:var(--muted)}
+.legend{display:flex;flex-wrap:wrap;gap:12px;font-size:12px;color:var(--muted)}
+.legend i{display:inline-block;width:10px;height:10px;border-radius:2px;margin-right:5px;vertical-align:-1px}
+.ptable{display:grid;gap:4px;font-family:var(--mono);font-size:12px}
+.ptable div{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1.2fr);gap:8px;padding:4px 8px;border-radius:4px;background:var(--sunk)}
+.ptable div.on{background:var(--pers-soft);color:var(--pers);font-weight:600}
+.code div.bad{background:var(--bad-soft);color:var(--bad)}
 
 /* Repaso */
 .review{max-width:680px;margin:0 auto;display:grid;gap:16px}
@@ -326,15 +344,15 @@ const C = [
  {id:"lde",p:"virt",t:"Ejecución directa limitada",ch:"6",crux:"¿Cómo virtualizar la CPU de forma eficiente sin perder el control?",
   d:"El programa se ejecuta directamente sobre la CPU para ir rápido, pero en modo usuario. Las operaciones privilegiadas pasan por traps al núcleo, y una interrupción de temporizador devuelve el control al SO periódicamente.",
   k:["Modo usuario y modo núcleo","Tabla de traps configurada en el arranque","La interrupción de temporizador evita que un proceso se apodere de la CPU"],
-  r:["syscall","cambio-contexto","proceso"]},
+  r:["syscall","cambio-contexto","proceso"],lab:"lde"},
  {id:"syscall",p:"virt",t:"Llamada al sistema y trap",ch:"6",crux:"¿Cómo pide un proceso en modo usuario una operación privilegiada?",
   d:"Una instrucción especial (trap) eleva el nivel de privilegio y salta a un manejador del núcleo previamente registrado. Al terminar, return-from-trap vuelve al modo usuario.",
   k:["El proceso no elige la dirección de salto, solo un número de llamada","Los registros se guardan en la pila del núcleo"],
-  r:["lde","api-procesos"]},
+  r:["lde","api-procesos"],lab:"lde"},
  {id:"cambio-contexto",p:"virt",t:"Cambio de contexto",ch:"6",crux:"¿Cómo pasa el SO de un proceso a otro?",
   d:"El SO guarda los registros del proceso actual en su estructura y restaura los del siguiente. Al ejecutar return-from-trap, la CPU continúa con el nuevo proceso.",
   k:["Lo dispara una llamada al sistema o la interrupción de temporizador","Tiene un coste: hay que guardar estado y se enfrían cachés y TLB"],
-  r:["lde","planificacion"]},
+  r:["lde","planificacion"],lab:"lde"},
  {id:"planificacion",p:"virt",t:"Planificación: FIFO, SJF, STCF, RR",ch:"7",crux:"¿Cómo diseñar una política de planificación?",
   d:"Las políticas se comparan con dos métricas. El tiempo de retorno (fin − llegada) favorece al trabajo más corto primero; el tiempo de respuesta (primera ejecución − llegada) favorece a Round Robin. No hay una política que gane en ambas.",
   k:["FIFO sufre el efecto convoy","SJF es óptimo en retorno si todos llegan a la vez","STCF es la versión expropiativa de SJF","RR reparte la CPU en rodajas (quantum)"],
@@ -763,6 +781,7 @@ document.querySelector("nav.tabs").addEventListener("click",e=>{const b=e.target
 /* =================== LABORATORIO =================== */
 const LABS = {
   proc:{p:"virt",t:"Shell: fork, exec y wait",s:"Crea, transforma y espera procesos",render:labProc},
+  lde:{p:"virt",t:"Ejecución directa limitada",s:"Modo usuario, traps y temporizador",render:labLde},
   sched:{p:"virt",t:"Planificador de CPU",s:"FIFO · SJF · STCF · RR",render:labSched},
   paging:{p:"virt",t:"Traducción con paginación",s:"VPN, PFN y TLB",render:labPaging},
   repl:{p:"virt",t:"Reemplazo de páginas",s:"FIFO · LRU · Óptimo",render:labRepl},
@@ -781,6 +800,165 @@ function openLab(k,switchView=true){
   curLab=k; store.set("lab",k); renderLabNav();
   const host=$("#labhost"); host.innerHTML=""; LABS[k].render(host);
   if(switchView) showView("lab");
+}
+
+/* ---- Ejecución directa limitada ---- */
+function labLde(host){
+  const Q=4, DISK=4;
+  const PROGS={
+    A:{name:"A · lector",col:"var(--virt)",code:[{t:"x = 2 + 3"},{t:"y = x * 10"},{t:"read(fd, buf, 512)",sys:"read"},{t:"total = y + buf[0]"},{t:"exit(0)",sys:"exit"}]},
+    B:{name:"B · bucle infinito",col:"var(--conc)",code:[{t:"i = i + 1"},{t:"goto 0     // sin llamadas al sistema",jump:0}]},
+    C:{name:"C · acceso directo al disco",col:"var(--conc)",code:[{t:"x = 1"},{t:"out 0x1F0, x   // instrucción privilegiada",priv:true},{t:"y = 2"}]}
+  };
+  const TRAPS=[["llamada al sistema","manejador_syscall()"],["temporizador","manejador_temporizador()"],["disco","manejador_disco()"],["instrucción ilegal","manejador_excepcion()"]];
+  let second="B", timerOn=true, S, play=null;
+  function reset(){
+    stop();
+    S={mode:"kernel",cur:null,tick:0,timerLeft:Q,disk:null,tl:[],msg:"",trap:null,hang:false,
+       procs:{A:{pc:0,st:"ready"},[second]:{pc:0,st:"ready"}},kq:[]};
+    S.kq.push(
+      {t:"Arranque. La CPU empieza en modo núcleo y ejecuta el SO. Lo primero que hace es indicarle a la CPU dónde están sus manejadores: la <b>tabla de traps</b>. Ningún proceso podrá cambiarla.",trap:"all"},
+      {t: timerOn?`El SO programa el <b>temporizador</b> para que interrumpa cada ${Q} instrucciones de usuario. Es su garantía de volver a tener el control.`:"El temporizador está <b>desactivado</b>: el SO no lo programa. Solo recuperará el control si un proceso hace una llamada al sistema, provoca una excepción o llega una interrupción de un dispositivo.",trap:timerOn?1:null},
+      {t:"El SO elige el proceso A, carga sus registros y ejecuta <b>return-from-trap</b>: la CPU pasa a <b>modo usuario</b> y salta a la primera instrucción de A.",run:()=>{S.cur="A"; S.procs.A.st="running"; S.mode="user"; S.timerLeft=Q}}
+    );
+  }
+  host.innerHTML=`<div class="lab" style="${pc("virt")}">
+    <div><div class="label">Capítulo 6</div><h2>Ejecución directa limitada</h2></div>
+    <p class="intro">Una sola CPU y dos procesos. Los procesos se ejecutan <b>directamente</b> en la CPU, a toda velocidad, pero en <b>modo usuario</b>. Avanza instrucción a instrucción y observa cuándo y por qué la CPU pasa a <b>modo núcleo</b>. Después desactiva el temporizador, o cambia B por C, y repite.</p>
+    <div class="controls">
+      <div class="field"><span class="label">Segundo proceso</span><div class="seg" id="l2"><button data-v="B">B: bucle infinito</button><button data-v="C">C: toca el disco</button></div></div>
+      <div class="field"><span class="label">Temporizador</span><div class="seg" id="lt"><button data-v="1">Activado</button><button data-v="0">Desactivado</button></div></div>
+      <button class="btn primary" id="lstep">Paso</button>
+      <button class="btn" id="lplay">Reproducir</button>
+      <button class="btn" id="lreset">Reiniciar</button>
+    </div>
+    <div class="procgrid">
+      <div style="display:grid;gap:14px;align-content:start">
+        <div class="cpu" id="lcpu"></div>
+        <p class="explain" id="lmsg" aria-live="polite"></p>
+        <div><div class="label" style="margin-bottom:6px">Quién ha usado la CPU en cada instante</div><div class="tl" id="ltl"></div>
+          <div class="legend"><span><i style="background:var(--virt)"></i>A (usuario)</span><span><i style="background:var(--conc)"></i>${second} (usuario)</span><span><i style="background:var(--pers)"></i>SO (núcleo)</span><span><i style="background:var(--sunk)"></i>CPU inactiva</span></div></div>
+      </div>
+      <div style="display:grid;gap:14px;align-content:start">
+        <div class="threads" id="lprocs" style="grid-template-columns:1fr 1fr"></div>
+        <div><div class="label" style="margin-bottom:6px">Tabla de traps (la configura el SO al arrancar)</div><div class="ptable" id="ltraps"></div></div>
+      </div>
+    </div>
+  </div>`;
+
+  const other=x=>x==="A"?second:"A";
+  const nm=x=>PROGS[x].name.split(" · ")[0];
+  // Planificador: siguiente proceso listo, empezando por el otro
+  function schedule(why){
+    const prev=S.cur, order=prev?[other(prev),prev]:["A",second];
+    if(prev && S.procs[prev].st==="running") S.procs[prev].st="ready";
+    const nxt=order.find(x=>S.procs[x].st==="ready")||null;
+    if(!nxt){ S.cur=null; S.mode="kernel"; return "No hay ningún proceso listo, así que el SO deja la <b>CPU inactiva</b> hasta la siguiente interrupción." }
+    S.procs[nxt].st="running"; S.cur=nxt; S.mode="user"; S.timerLeft=Q;
+    if(nxt===prev) return `${why||""}El único proceso listo es ${nm(nxt)}: el SO restaura sus registros y ejecuta <b>return-from-trap</b>. La CPU vuelve a modo usuario y ${nm(nxt)} continúa donde estaba.`;
+    return `${why||""}<b>Cambio de contexto</b>: el SO guarda los registros de ${prev?nm(prev):"la CPU"} en su estructura de proceso, restaura los de ${nm(nxt)} y ejecuta <b>return-from-trap</b>. La CPU vuelve a modo usuario, pero ahora ejecutando ${nm(nxt)}.`;
+  }
+  const kstep=(t,run,trap)=>({t,run,trap});
+  function interrupt(kind){
+    const who=S.cur;
+    if(kind==="timer") S.kq.push(
+      kstep(`<b>¡Interrupción de temporizador!</b> ${nm(who)} no ha pedido nada, pero el hardware lo interrumpe: la CPU pasa a <b>modo núcleo</b>, guarda los registros de ${nm(who)} y salta al manejador del temporizador.`,()=>{S.mode="kernel"},1),
+      kstep(`El SO vuelve a tener el control. El planificador decide que ${nm(who)} ya ha usado su turno de ${Q} instrucciones.`,null,1),
+      kstep(null,()=>schedule(""),null));
+    if(kind==="disk") S.kq.push(
+      kstep(`<b>¡Interrupción del disco!</b> Los datos que pidió A han llegado. La CPU pasa a <b>modo núcleo</b> y salta al manejador del disco${who?`, interrumpiendo a ${nm(who)}`:""}.`,()=>{S.mode="kernel"; S.disk=null},2),
+      kstep("El manejador copia el bloque en el búfer de A y lo marca como <b>listo</b>: read() ya puede devolver.",()=>{S.procs.A.st="ready"; S.procs.A.pc++},2),
+      kstep(null,()=>{
+        if(who){ S.procs[who].st="running"; S.mode="user";
+          return `El SO vuelve a ${nm(who)} con <b>return-from-trap</b>, porque su política es continuar con el proceso interrumpido.${timerOn?"":" <b>Sin temporizador</b>, el SO ha tenido el control un instante, pero no tendrá otra oportunidad de quitarle la CPU a "+nm(who)+"."}`}
+        return schedule("");
+      },null));
+  }
+  function userTick(){
+    const x=S.cur, P=S.procs[x], ins=PROGS[x].code[P.pc];
+    S.tl.push(x);
+    if(timerOn) S.timerLeft--;
+    if(ins.sys==="read"){
+      S.msg=`A ejecuta <span class="mono">read()</span>. No puede hablar con el disco en modo usuario, así que hace una <b>llamada al sistema</b>: pone el número de READ en un registro y ejecuta la instrucción <b>trap</b>.`;
+      S.kq.push(
+        kstep("<b>Trap</b>: el hardware cambia a <b>modo núcleo</b>, guarda los registros de A en su pila de núcleo y salta al manejador de llamadas al sistema de la tabla de traps. A no ha elegido a qué dirección saltar.",()=>{S.mode="kernel"},0),
+        kstep("El manejador de read() comprueba que el fichero está abierto y que A tiene permiso, y pide el bloque al disco. El disco tardará, así que A queda <b>bloqueado</b>.",()=>{S.procs.A.st="blocked"; S.disk=DISK},0),
+        kstep(null,()=>schedule("Mientras A espera al disco, no tiene sentido dejar la CPU parada. "),null));
+      return;
+    }
+    if(ins.sys==="exit"){
+      S.msg="A ejecuta <span class=\"mono\">exit()</span>: otra llamada al sistema, con su trap.";
+      S.kq.push(
+        kstep("<b>Trap</b>: modo núcleo, salto al manejador de llamadas al sistema.",()=>{S.mode="kernel"},0),
+        kstep("El manejador de exit() libera la memoria de A y lo marca como terminado.",()=>{S.procs.A.st="done"},0),
+        kstep(null,()=>schedule(""),null));
+      return;
+    }
+    if(ins.priv){
+      S.msg=`C intenta ejecutar <span class="mono">out</span>, que escribe directamente en el controlador del disco. Es una <b>instrucción privilegiada</b> y la CPU está en modo usuario, así que <b>la CPU se niega</b> a ejecutarla.`;
+      S.kq.push(
+        kstep("<b>Excepción</b>: la CPU no ejecuta la instrucción. Pasa a <b>modo núcleo</b> y salta al manejador de excepciones que el SO registró al arrancar.",()=>{S.mode="kernel"},3),
+        kstep("El SO termina el proceso C (en UNIX le enviaría una señal que lo mata). C nunca llegó a tocar el disco.",()=>{S.procs.C.st="killed"},3),
+        kstep(null,()=>schedule(""),null));
+      return;
+    }
+    if(ins.jump!==undefined){ P.pc=ins.jump; S.msg=`${nm(x)} salta al principio del bucle. Se ejecuta directamente en la CPU: el SO no está mirando.`; }
+    else { P.pc++; S.msg=`${nm(x)} ejecuta <span class="mono">${esc(ins.t)}</span> directamente en la CPU, en modo usuario, a toda velocidad. El SO no interviene.`; }
+    if(!timerOn && x===second && second==="B" && S.procs.A.st==="ready"){ S.hang=true;
+      S.msg=`B sigue en su bucle. A está listo para ejecutarse, pero <b>sin temporizador el SO no vuelve a ejecutarse nunca</b>: B no hace llamadas al sistema y nada interrumpe la CPU. El sistema está colgado y solo queda reiniciar la máquina. Activa el temporizador y repite.`;}
+  }
+  function step(){
+    if(S.procs.A.st==="done" && (S.procs[second].st==="done"||S.procs[second].st==="killed")){ S.msg="Todos los procesos han terminado."; stop(); return draw() }
+    S.tick++; S.trap=null;
+    // Las interrupciones se atienden entre instrucciones de usuario o con la CPU inactiva
+    if(!S.kq.length && (S.mode==="user"||!S.cur)){
+      if(S.disk===0) interrupt("disk");
+      else if(timerOn && S.cur && S.timerLeft<=0) interrupt("timer");
+    }
+    if(S.kq.length){
+      const k=S.kq.shift(); let extra=null;
+      if(k.run) extra=k.run();
+      S.tl.push("K"); S.trap=k.trap; S.msg=k.t||extra||"";
+    } else if(S.cur){ userTick() }
+    else { S.tl.push("·"); S.msg="CPU inactiva: ningún proceso está listo. El SO espera a la siguiente interrupción."; }
+    if(S.disk>0) S.disk--;
+    draw();
+  }
+  function stop(){ if(play){clearInterval(play); play=null} const b=host.querySelector("#lplay"); if(b) b.textContent="Reproducir" }
+  function draw(){
+    host.querySelectorAll("#l2 button").forEach(b=>b.setAttribute("aria-pressed",b.dataset.v===second));
+    host.querySelectorAll("#lt button").forEach(b=>b.setAttribute("aria-pressed",(b.dataset.v==="1")===timerOn));
+    const user=S.mode==="user"&&S.cur, P=S.cur&&S.procs[S.cur], ins=P&&PROGS[S.cur].code[P.pc];
+    host.querySelector("#lcpu").innerHTML=`
+      <div class="row"><span class="modebadge" style="--mc:${user?"var(--virt)":"var(--pers)"}">${user?"MODO USUARIO":"MODO NÚCLEO"}</span>
+        <span>${user?`Ejecuta <b>${nm(S.cur)}</b>: <span class="mono">${esc(ins.t.split("//")[0].trim())}</span>`:S.cur||S.kq.length?"Ejecuta <b>el SO</b>":"CPU <b>inactiva</b>"}</span></div>
+      <div class="row">
+        <span>Temporizador: ${timerOn?`<span class="pips">${[...Array(Q)].map((_,i)=>`<i class="${i<Math.max(0,S.timerLeft)?"on":""}"></i>`).join("")}</span> <span class="mono">${Math.max(0,S.timerLeft)}</span>`:`<b>desactivado</b>`}</span>
+        <span>Disco: ${S.disk===null?"libre":`<b>leyendo</b> para A (${S.disk})`}</span>
+        <span class="mono" style="color:var(--muted)">t = ${S.tick}</span>
+      </div>`;
+    const m=host.querySelector("#lmsg");
+    m.innerHTML=S.msg||`La CPU acaba de encenderse. Pulsa <b>Paso</b> para avanzar una instrucción, o <b>Reproducir</b>.`;
+    m.style.borderColor=S.hang?"var(--bad)":(S.mode==="user"&&S.cur?"var(--virt)":"var(--pers)");
+    host.querySelector("#ltl").innerHTML=S.tl.map(x=>x==="K"?`<span class="k" title="SO, modo núcleo">K</span>`:x==="·"?`<span class="idle" title="CPU inactiva">·</span>`:`<span style="background:${PROGS[x].col}" title="${nm(x)}, modo usuario">${x}</span>`).join("");
+    const tl=host.querySelector("#ltl"); tl.scrollLeft=tl.scrollWidth;
+    const stName={ready:"listo",running:"ejecutándose",blocked:"bloqueado (espera al disco)",done:"terminado",killed:"terminado por el SO"};
+    host.querySelector("#lprocs").innerHTML=["A",second].map(x=>{const pr=S.procs[x];
+      return `<div class="thread" style="${x==="A"?pc("virt"):pc("conc")}"><h3 style="color:var(--pc)">${esc(PROGS[x].name)}</h3>
+        <div class="code">${PROGS[x].code.map((l,j)=>`<div class="${j===pr.pc&&pr.st!=="done"&&pr.st!=="killed"?(x===S.cur&&S.mode==="user"?"pc":""):""}${l.priv&&pr.st==="killed"?" bad":""}">${esc(l.t)}</div>`).join("")}</div>
+        <span class="tag">${stName[pr.st]}</span></div>`}).join("");
+    host.querySelector("#ltraps").innerHTML=TRAPS.map(([ev,h],i)=>`<div class="${S.trap==="all"||S.trap===i?"on":""}"><span>${ev}</span><span>→ ${h}</span></div>`).join("");
+  }
+  host.querySelector("#lstep").onclick=()=>{stop(); step()};
+  host.querySelector("#lplay").onclick=e=>{
+    if(play){stop(); return}
+    e.target.textContent="Pausa";
+    play=setInterval(()=>{ if(!host.isConnected){stop();return} step(); if(S.hang) stop() },900);
+  };
+  host.querySelector("#lreset").onclick=()=>{reset(); draw()};
+  host.querySelector("#l2").addEventListener("click",e=>{const b=e.target.closest("button"); if(b){second=b.dataset.v; host.querySelector(".legend span:nth-child(2)").innerHTML=`<i style="background:var(--conc)"></i>${second} (usuario)`; reset(); draw()}});
+  host.querySelector("#lt").addEventListener("click",e=>{const b=e.target.closest("button"); if(b){timerOn=b.dataset.v==="1"; reset(); draw()}});
+  reset(); draw();
 }
 
 /* ---- Shell: fork, exec y wait ---- */
