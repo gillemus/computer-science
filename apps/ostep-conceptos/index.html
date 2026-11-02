@@ -166,8 +166,42 @@ table.t td.inv{color:var(--muted)}
 .hash{font-family:var(--mono);font-size:12px;word-break:break-all;background:var(--sunk);border-radius:6px;padding:8px 10px}
 .hash.same{background:var(--bad-soft);color:var(--bad)}
 
+/* Hilo conductor */
+.story{display:grid;grid-template-columns:210px minmax(0,1fr);gap:32px;align-items:start}
+.toc{position:sticky;top:calc(env(safe-area-inset-top,0px) + 70px);display:grid;gap:4px}
+.toc button{border:0;background:none;text-align:left;padding:8px 10px;border-radius:6px;cursor:pointer;display:grid;gap:2px;border-left:3px solid var(--pc)}
+.toc button:hover{background:var(--surface)}
+.toc button b{font-family:var(--display);font-size:15px}
+.toc button small{color:var(--muted);font-size:12px}
+.storyintro{max-width:66ch;color:var(--muted);margin:0 0 8px}
+.act{display:grid;gap:0;scroll-margin-top:80px}
+.act + .act{margin-top:8px}
+.acthead{display:grid;gap:6px;padding-block:8px 18px}
+.acthead h2{font-size:clamp(26px,4vw,36px);color:var(--pc)}
+.acthead p{margin:0;max-width:66ch}
+.step{display:grid;grid-template-columns:40px minmax(0,1fr);gap:14px;scroll-margin-top:90px}
+.rail{display:grid;justify-items:center;grid-template-rows:auto 1fr}
+.num{width:32px;height:32px;border-radius:50%;background:var(--pc);color:var(--surface);display:grid;place-items:center;font-family:var(--mono);font-size:13px;font-weight:600}
+.rail::after{content:"";width:2px;background:var(--pc);opacity:.35;margin-top:4px}
+.scard{background:var(--surface);border:1px solid var(--line);border-radius:10px;padding:14px 16px;display:grid;gap:8px;transition:box-shadow .3s}
+.scard.flash{box-shadow:0 0 0 3px var(--pc)}
+.scard h3{font-size:19px;display:flex;flex-wrap:wrap;gap:8px;align-items:baseline}
+.scard h3 small{font-family:var(--mono);font-size:12px;color:var(--muted);font-weight:400}
+.scard p{margin:0}
+.bridges{display:grid;gap:4px;font-size:13px;color:var(--muted);border-top:1px dashed var(--line);padding-top:8px}
+.bridges button,.linkbtn{border:0;background:none;padding:0;cursor:pointer;color:var(--pc);font-weight:600;text-decoration:underline;text-underline-offset:2px;font-size:inherit}
+.but{display:grid;grid-template-columns:40px minmax(0,1fr);gap:14px}
+.but .rail::after{margin-top:0}
+.but p{margin:0;padding-block:10px 14px;font-style:italic;max-width:66ch}
+.but p b{font-style:normal;color:var(--pc)}
+.handoff{margin-block:6px 26px;padding:14px 16px;border-radius:10px;background:var(--sunk);display:grid;gap:4px}
+.ctx{display:grid;gap:10px;background:var(--sunk);border-radius:8px;padding:12px 14px}
+.ctx p{margin:0;font-size:14px}
+.ctx .label{display:block;margin-bottom:2px}
+
 /* Repaso */
 .review{max-width:680px;margin:0 auto;display:grid;gap:16px}
+.review > .seg{justify-self:start}
 .card{background:var(--surface);border:1px solid var(--line);border-top:4px solid var(--pc);border-radius:12px;padding:26px;display:grid;gap:14px;min-height:260px}
 .card .q{font-family:var(--display);font-size:24px;line-height:1.25}
 .progress{display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap}
@@ -179,6 +213,9 @@ footer a{color:inherit}
   .explorer,.twocol{grid-template-columns:1fr}
   .detail{position:static}
   .threads{grid-template-columns:1fr}
+  .story{grid-template-columns:1fr}
+  .toc{position:static;display:flex;overflow-x:auto;gap:6px}
+  .toc button{white-space:nowrap;background:var(--surface)}
   .pieces{grid-template-columns:repeat(2,1fr)}
 }
 @media (max-width:560px){
@@ -197,6 +234,7 @@ footer a{color:inherit}
 
   <nav class="tabs" role="tablist" aria-label="Secciones">
     <button role="tab" id="tab-explorar" aria-selected="true" data-view="explorar">Conceptos</button>
+    <button role="tab" id="tab-hilo" aria-selected="false" data-view="hilo">Hilo conductor</button>
     <button role="tab" id="tab-lab" aria-selected="false" data-view="lab">Laboratorio</button>
     <button role="tab" id="tab-repaso" aria-selected="false" data-view="repaso">Repaso</button>
   </nav>
@@ -209,6 +247,13 @@ footer a{color:inherit}
     <div class="explorer">
       <div class="list" id="list"></div>
       <article class="detail" id="detail" aria-live="polite"></article>
+    </div>
+  </section>
+
+  <section class="view" id="view-hilo" hidden>
+    <div class="story">
+      <nav class="toc" id="toc" aria-label="Actos"></nav>
+      <div id="storybody"></div>
     </div>
   </section>
 
@@ -413,6 +458,92 @@ const C = [
 ];
 const byId = Object.fromEntries(C.map(c=>[c.id,c]));
 
+/* Hilo conductor: cada paso es [concepto, idea que aporta, problema que deja].
+   El problema que deja un paso es lo que motiva el siguiente. */
+const ACTS = [
+ {id:"cpu",p:"virt",t:"Virtualizar la CPU",
+  q:"Tenemos una sola CPU y queremos ejecutar muchos programas a la vez, como si cada uno tuviera la máquina para él solo.",
+  steps:[
+  ["proceso","El SO crea la abstracción de proceso: un programa en ejecución con su propio estado, que se turna con los demás en la CPU.","Los programas necesitan una forma de crear otros procesos y de controlarlos."],
+  ["api-procesos","fork() copia el proceso, exec() cambia de programa y wait() espera al hijo. Con eso se construye la shell.","Para ir rápido, el proceso se ejecuta directamente en la CPU. Pero entonces podría hacer cualquier cosa y no devolver nunca el control al SO."],
+  ["lde","Se ejecuta directamente, pero en modo usuario. Lo privilegiado se pide al núcleo y el temporizador interrumpe periódicamente.","Hace falta una puerta controlada por la que el proceso entre al núcleo sin poder saltar a donde quiera."],
+  ["syscall","El trap salta a un manejador que el SO registró en el arranque; el proceso solo elige el número de llamada.","Cada vez que el SO recupera el control, por un trap o por el temporizador, puede elegir pasar a otro proceso. ¿Cómo se hace ese cambio?"],
+  ["cambio-contexto","Se guardan los registros del proceso actual y se restauran los del siguiente.","Ya tenemos el mecanismo para cambiar de proceso. Falta la política: decidir a cuál."],
+  ["planificacion","FIFO, SJF y STCF minimizan el tiempo de retorno; Round Robin minimiza el de respuesta. Ninguna gana en ambas.","Todas estas políticas suponen que se conoce la duración de cada trabajo, y el SO no la conoce."],
+  ["mlfq","MLFQ observa cómo se comporta cada trabajo y ajusta su prioridad: aprende del pasado para predecir el futuro.","MLFQ equilibra retorno y respuesta, pero no garantiza a cada usuario una parte concreta de la CPU."],
+  ["proporcional","Billetes de lotería, stride o el vruntime de Linux reparten la CPU según pesos.","La CPU ya está virtualizada. Queda la otra gran pieza del hardware que comparten los procesos: la memoria."]]},
+ {id:"mem",p:"virt",t:"Virtualizar la memoria",
+  q:"Todos los procesos comparten la misma memoria física, pero cada uno debe creer que tiene una memoria privada, grande y solo para él, sin poder tocar la de los demás.",
+  steps:[
+  ["espacio-direcciones","Cada proceso ve un espacio de direcciones virtual con código, heap y pila. Todas sus direcciones son virtuales.","El hardware tiene que convertir cada dirección virtual en física, en cada acceso y muy rápido."],
+  ["base-limite","Un registro base se suma a cada dirección y un registro límite impide salirse.","Se reserva memoria física para todo el espacio, incluido el hueco enorme y sin usar entre el heap y la pila."],
+  ["segmentacion","Un par base/límite por segmento: el hueco ya no ocupa memoria física.","Los segmentos tienen tamaños variables y la memoria se llena de huecos pequeños inservibles (fragmentación externa)."],
+  ["espacio-libre","Listas libres con estrategias de ajuste, división y fusión de bloques.","Ninguna estrategia elimina la fragmentación externa, porque su causa es el tamaño variable. La salida radical es usar trozos de tamaño fijo."],
+  ["paginacion","Páginas y marcos del mismo tamaño, y una tabla de páginas por proceso. Se acabó la fragmentación externa.","Cada acceso a memoria exige otro acceso a la tabla de páginas, y las tablas lineales ocupan muchísimo."],
+  ["tlb","Una caché hardware de traducciones recientes. Por la localidad, casi todos los accesos aciertan.","La TLB arregla la velocidad, pero las tablas de páginas siguen ocupando demasiada memoria."],
+  ["multinivel","Un directorio de páginas solo apunta a los trozos de la tabla que tienen entradas válidas.","Aunque las tablas sean compactas, la suma de todos los espacios de direcciones puede superar la memoria física."],
+  ["swapping","Las páginas que no caben van al disco. Una política como LRU decide cuál expulsar.","Ya hay muchas CPU virtuales y muchas memorias virtuales. Pero un programa que quiera usar varias CPU sobre los mismos datos necesita algo más."]]},
+ {id:"conc",p:"conc",t:"Concurrencia",
+  q:"Un proceso usa una sola CPU. Para aprovechar varias dentro del mismo programa, varios flujos de ejecución deben compartir la misma memoria.",
+  steps:[
+  ["hilos","Varios hilos comparten el espacio de direcciones; cada uno tiene sus registros y su pila.","Comparten datos y el temporizador puede interrumpirlos en cualquier instrucción, así que se pisan unos a otros."],
+  ["carrera","Se identifica la sección crítica: el código que toca datos compartidos y debe ejecutarse sin interferencias.","Necesitamos que la sección crítica se comporte como una única instrucción atómica."],
+  ["locks","Un lock da exclusión mutua, construido con instrucciones atómicas del hardware como test-and-set.","Proteger una estructura con un solo lock es correcto, pero si todos los hilos esperan el mismo lock, se pierde el paralelismo."],
+  ["estructuras","Locks más finos (por nodo, por cubeta) o contadores aproximados para que la estructura escale.","Los locks resuelven la exclusión mutua, pero a veces un hilo no quiere entrar en una sección: quiere esperar a que ocurra algo."],
+  ["cond","Una variable de condición duerme al hilo hasta que otro le avisa con signal().","Locks y condiciones son dos herramientas distintas. ¿Puede una sola primitiva hacer ambas cosas?"],
+  ["semaforos","Un semáforo es un contador que sirve como lock o como condición según su valor inicial.","Con estas herramientas se pueden resolver los problemas clásicos de coordinación."],
+  ["prodcons","Dos condiciones (o dos semáforos y un mutex) coordinan productores y consumidores sobre un búfer acotado.","Al combinar varios locks y esperas aparece un riesgo nuevo: hilos que se esperan mutuamente para siempre."],
+  ["deadlock","Se rompe una de las cuatro condiciones, normalmente fijando un orden para adquirir los locks.","Tantos problemas llevan a preguntarse si se puede programar concurrencia sin hilos."],
+  ["eventos","Un bucle de eventos atiende un evento cada vez: sin locks, pero sin poder bloquearse.","El bucle de eventos depende de la E/S asíncrona. Y la E/S nos lleva a otro problema: la memoria se borra al apagar el equipo."]]},
+ {id:"pers",p:"pers",t:"Persistencia",
+  q:"La memoria es volátil. Los datos tienen que sobrevivir a un apagado y a una caída, guardados en dispositivos lentos y que pueden fallar.",
+  steps:[
+  ["io","El SO habla con los dispositivos mediante registros, interrupciones y DMA, ocultos tras un driver.","El dispositivo de almacenamiento más común, el disco duro, rinde muy distinto según cómo se acceda a él."],
+  ["disco","Búsqueda, rotación y transferencia explican el coste. El acceso secuencial es mucho más rápido que el aleatorio.","Un disco es lento, tiene capacidad limitada y puede averiarse."],
+  ["raid","Varios discos actúan como uno: más capacidad, más velocidad y redundancia con espejo o paridad.","RAID ofrece bloques fiables, pero las personas quieren ficheros con nombre y carpetas, no bloques."],
+  ["ficheros","Ficheros (inodos) y directorios (nombres que apuntan a inodos), con una API de open, read, write y fsync.","¿Cómo se guardan ficheros y directorios en un dispositivo que solo entiende bloques numerados?"],
+  ["vsfs","Superbloque, bitmaps, tabla de inodos y bloques de datos.","Este diseño ingenuo dispersa datos e inodos por el disco y provoca búsquedas lentas."],
+  ["ffs","Grupos de cilindros que colocan juntos los datos que se usan juntos.","Una operación toca varias estructuras. Si el sistema cae a mitad, el disco queda inconsistente: es el problema de atomicidad de la concurrencia, ahora frente a caídas."],
+  ["consistencia","El journaling anota la transacción completa en un diario antes de aplicarla.","El diario escribe dos veces y las escrituras siguen dispersas. Con cachés grandes, casi todo el tráfico al disco son escrituras."],
+  ["lfs","Escribirlo todo de forma secuencial al final de un log y limpiar después los bloques obsoletos.","Escribir siempre en un sitio nuevo y limpiar después encaja muy bien con un dispositivo que no puede sobrescribir en su sitio."],
+  ["ssd","La capa de traducción del SSD funciona como un sistema log-structured, con recolección de basura y nivelación del desgaste.","Ningún dispositivo es perfecto: además de averías completas, hay corrupción silenciosa de datos."],
+  ["integridad","Sumas de comprobación y revisiones periódicas detectan los datos corruptos.","Hasta aquí todo ocurre en una máquina. Al repartir los ficheros por la red, las caídas y la comunicación se convierten en el problema principal."],
+  ["distribuidos","RPC, reintentos, operaciones idempotentes y cachés con distintas políticas de coherencia (NFS, AFS).","Si los datos viajan por una red que no controlamos y los usan muchas personas, hay que protegerlos."]]},
+ {id:"seg",p:"seg",t:"Seguridad",
+  q:"Todo lo anterior supone que procesos y usuarios juegan limpio. Ahora suponemos que alguien intentará leer, cambiar o bloquear lo que no le corresponde.",
+  steps:[
+  ["seg-objetivos","Se definen las metas (confidencialidad, integridad, disponibilidad) y en qué hay que confiar.","Para proteger un sistema no basta con parches: hay que diseñarlo bien desde el principio."],
+  ["seg-principios","Mínimo privilegio, mediación completa, valores por defecto seguros y el resto de principios de Saltzer y Schroeder.","Toda decisión de acceso empieza por saber quién la pide."],
+  ["autenticacion","Contraseñas con hash y sal, tokens o biometría vinculan el proceso a una identidad.","Saber quién eres no dice qué puedes hacer."],
+  ["control-acceso","Listas de control de acceso o capacidades deciden qué puede hacer cada identidad con cada objeto.","El control de acceso solo funciona mientras el SO tiene el control. Un disco robado o un mensaje por la red escapan de él."],
+  ["criptografia","El cifrado y las firmas protegen los datos aunque estén fuera del alcance del SO.","Con la criptografía como herramienta se puede proteger la comunicación entre máquinas."],
+  ["seg-distribuida","TLS y los certificados autentican al otro extremo y cifran el canal.",null]]}
+];
+
+/* Ideas que reaparecen en otras partes del libro: [a, b, por qué] */
+const BRIDGES = [
+ ["lde","carrera","La interrupción de temporizador que permite al SO recuperar el control es la misma que puede expulsar a un hilo a mitad de contador++."],
+ ["espacio-direcciones","hilos","Los hilos de un proceso comparten un único espacio de direcciones; solo la pila es privada de cada hilo."],
+ ["tlb","cambio-contexto","Cada cambio de contexto deja la TLB llena de traducciones de otro proceso; el ASID evita tener que vaciarla."],
+ ["planificacion","disco","Planificar el disco aplica las mismas ideas que planificar la CPU: SSTF es el equivalente de SJF."],
+ ["swapping","disco","El swapping guarda páginas en el disco, así que un fallo de página cuesta una búsqueda y una rotación."],
+ ["carrera","consistencia","La atomicidad vuelve a aparecer: una actualización del sistema de ficheros debe hacerse entera o no hacerse, ahora frente a caídas en vez de frente a otros hilos."],
+ ["eventos","io","Las interrupciones de E/S permiten solapar cálculo y espera, que es la base del bucle de eventos."],
+ ["lde","seg-objetivos","El modo usuario y el modo núcleo son el primer mecanismo de seguridad: impiden que un proceso se salte las reglas del SO."],
+ ["base-limite","seg-objetivos","La traducción de direcciones es también protección: un proceso no puede generar direcciones de la memoria de otro."],
+ ["syscall","control-acceso","Cada llamada al sistema es un punto de control: open() comprueba los permisos antes de dar acceso al fichero."],
+ ["ficheros","control-acceso","Los permisos de un fichero se guardan en su inodo, junto al propietario y el grupo."],
+ ["raid","integridad","RAID recupera discos que fallan por completo; las sumas de comprobación detectan fallos parciales que RAID no ve."],
+ ["integridad","criptografia","Una suma de comprobación detecta errores accidentales; un hash criptográfico detecta también modificaciones intencionadas."],
+ ["distribuidos","seg-distribuida","Los mismos sistemas distribuidos (NFS, AFS) necesitan autenticar a sus clientes y proteger los datos en tránsito."],
+ ["locks","vsfs","El propio sistema de ficheros se ejecuta de forma concurrente y usa locks para proteger sus cachés e inodos."]
+];
+
+const STEP = {}; const ORDER = [];
+ACTS.forEach(a=>a.steps.forEach(([id,idea,but])=>{ORDER.push(id); STEP[id]={act:a,idea,but,n:ORDER.length}}));
+ORDER.forEach((id,i)=>{STEP[id].prev=ORDER[i-1]||null; STEP[id].next=ORDER[i+1]||null});
+const bridgesOf = id => BRIDGES.filter(b=>b[0]===id||b[1]===id).map(b=>({other:b[0]===id?b[1]:b[0],why:b[2]}));
+
 const store = {
   get(k,d){try{const v=localStorage.getItem("ostep:"+k);return v?JSON.parse(v):d}catch(e){return d}},
   set(k,v){try{localStorage.setItem("ostep:"+k,JSON.stringify(v))}catch(e){}}
@@ -463,20 +594,63 @@ function renderDetail(){
     <div class="crux"><span class="label">El problema central</span>${esc(c.crux)}</div>
     <p>${esc(c.d)}</p>
     <div><div class="label" style="margin-bottom:6px">Ideas clave</div><ul>${c.k.map(x=>`<li>${esc(x)}</li>`).join("")}</ul></div>
-    <div><div class="label" style="margin-bottom:6px">Relacionado</div><div class="related">${
-      c.r.map(id=>`<button data-id="${id}" style="${pc(byId[id].p)}">${esc(byId[id].t)}</button>`).join("")}</div></div>
+    ${threadContext(c)}
     <div class="actions">
       <button class="btn" id="toggleKnown">${known.has(c.id)?"Quitar de dominados":"Marcar como dominado"}</button>
       ${c.lab?`<button class="btn primary" data-lab="${c.lab}">Abrir simulador</button>`:""}
     </div>`;
 }
+function threadContext(c){
+  const s=STEP[c.id], lk=id=>`<button class="linkbtn" data-id="${id}" style="${pc(byId[id].p)}">${esc(byId[id].t)}</button>`;
+  const br=bridgesOf(c.id), shown=new Set([s.prev,s.next,...br.map(b=>b.other)]);
+  const rest=c.r.filter(id=>!shown.has(id));
+  return `<div class="ctx">
+    <div><span class="label">Por qué aparece · paso ${s.n} de ${ORDER.length}</span>
+      <p>${s.prev?`Viene de ${lk(s.prev)}, que dejó este problema: <em>${esc(STEP[s.prev].but)}</em>`:`<em>${esc(s.act.q)}</em>`}</p></div>
+    <div><span class="label">Qué aporta</span><p>${esc(s.idea)}</p></div>
+    ${s.but?`<div><span class="label">Qué problema deja</span><p><em>${esc(s.but)}</em> Lo aborda ${lk(s.next)}.</p></div>`:""}
+    <div><button class="btn small" data-goto="${c.id}">Ver en el hilo conductor</button></div>
+  </div>
+  ${br.length?`<div><div class="label" style="margin-bottom:6px">Conexiones con otras partes del libro</div><ul>${br.map(b=>`<li>${lk(b.other)}: ${esc(b.why)}</li>`).join("")}</ul></div>`:""}
+  ${rest.length?`<div><div class="label" style="margin-bottom:6px">Otros relacionados</div><div class="related">${rest.map(id=>`<button data-id="${id}" style="${pc(byId[id].p)}">${esc(byId[id].t)}</button>`).join("")}</div></div>`:""}`;
+}
+function renderStory(){
+  $("#toc").innerHTML = ACTS.map(a=>`<button style="${pc(a.p)}" data-act="${a.id}"><b>${esc(a.t)}</b><small>Pasos ${STEP[a.steps[0][0]].n}–${STEP[a.steps.at(-1)[0]].n}</small></button>`).join("");
+  $("#storybody").innerHTML = `<p class="storyintro">El libro avanza encadenando problemas: cada solución resuelve algo, pero deja un problema nuevo, y ese problema es el que motiva el concepto siguiente. Lee de arriba abajo y fíjate en el texto en cursiva entre pasos: es el porqué de cada salto. Al final de cada paso aparecen las ideas que reaparecen en otras partes del libro.</p>`
+   + ACTS.map((a,ai)=>`<section class="act" id="act-${a.id}" style="${pc(a.p)}">
+      <header class="acthead"><span class="label">Parte ${ai+1} de ${ACTS.length} · ${PIECES[a.p].name}</span><h2>${esc(a.t)}</h2><p>${esc(a.q)}</p></header>
+      ${a.steps.map(([id],i)=>{const s=STEP[id], c=byId[id], br=bridgesOf(id), last=i===a.steps.length-1;
+        return `<div class="step" id="st-${id}"><div class="rail"><span class="num">${s.n}</span></div>
+          <div class="scard"><h3>${esc(c.t)} <small>Cap. ${c.ch}</small></h3><p>${esc(s.idea)}</p>
+            <div class="actions"><button class="btn small" data-id="${id}">Abrir concepto</button>${c.lab?`<button class="btn small" data-lab="${c.lab}">Simulador</button>`:""}</div>
+            ${br.length?`<div class="bridges">${br.map(b=>`<span>↔ <button data-goto="${b.other}" style="${pc(byId[b.other].p)}">${esc(byId[b.other].t)}</button>: ${esc(b.why)}</span>`).join("")}</div>`:""}
+          </div></div>
+          ${s.but&&!last?`<div class="but"><div class="rail"></div><p><b>Pero…</b> ${esc(s.but)}</p></div>`:""}
+          ${s.but&&last?`<div class="handoff"><span class="label">Paso a la siguiente parte</span><span><em>${esc(s.but)}</em></span></div>`:""}`;
+      }).join("")}
+    </section>`).join("");
+}
+function gotoStep(id){
+  showView("hilo");
+  const el=document.getElementById("st-"+id); if(!el) return;
+  const reduce=matchMedia("(prefers-reduced-motion: reduce)").matches;
+  el.scrollIntoView({behavior:reduce?"auto":"smooth",block:"center"});
+  const card=el.querySelector(".scard"); card.classList.add("flash"); setTimeout(()=>card.classList.remove("flash"),1600);
+}
+$("#toc").addEventListener("click",e=>{const b=e.target.closest("[data-act]"); if(b) document.getElementById("act-"+b.dataset.act).scrollIntoView({behavior:"smooth"})});
+$("#storybody").addEventListener("click",e=>{
+  const g=e.target.closest("[data-goto]"); if(g){gotoStep(g.dataset.goto);return}
+  const o=e.target.closest("[data-id]"); if(o){select(o.dataset.id); showView("explorar"); window.scrollTo({top:$("#view-explorar").offsetTop-80}); return}
+  const l=e.target.closest("[data-lab]"); if(l) openLab(l.dataset.lab);
+});
 function select(id){
   current=id; renderList(); renderDetail();
   try{history.replaceState(null,"","#"+id)}catch(e){}
 }
 $("#list").addEventListener("click",e=>{const b=e.target.closest(".chip"); if(b) select(b.dataset.id)});
 $("#detail").addEventListener("click",e=>{
-  const r=e.target.closest(".related button"); if(r){select(r.dataset.id);return}
+  const g=e.target.closest("[data-goto]"); if(g){gotoStep(g.dataset.goto);return}
+  const r=e.target.closest(".related button, .linkbtn"); if(r){select(r.dataset.id);return}
   if(e.target.id==="toggleKnown"){
     known.has(current)?known.delete(current):known.add(current);
     store.set("known",[...known]); renderList(); renderDetail(); renderPieces();
@@ -488,7 +662,7 @@ $("#q").addEventListener("input",renderList);
 /* ---- Pestañas ---- */
 function showView(v){
   document.querySelectorAll("nav.tabs button").forEach(b=>b.setAttribute("aria-selected",b.dataset.view===v));
-  ["explorar","lab","repaso"].forEach(x=>$("#view-"+x).hidden = x!==v);
+  ["explorar","hilo","lab","repaso"].forEach(x=>$("#view-"+x).hidden = x!==v);
   store.set("view",v);
 }
 document.querySelector("nav.tabs").addEventListener("click",e=>{const b=e.target.closest("button"); if(b) showView(b.dataset.view)});
@@ -930,17 +1104,35 @@ function labRaid(host){
 }
 
 /* =================== REPASO =================== */
-let deck=[], idx=0, revealed=false;
+let deck=[], idx=0, revealed=false, rmode="c";
 function buildDeck(){
   const pool=C.filter(c=>!filter||c.p===filter);
   const unk=pool.filter(c=>!known.has(c.id)), kn=pool.filter(c=>known.has(c.id));
   const sh=a=>a.map(x=>[Math.random(),x]).sort((a,b)=>a[0]-b[0]).map(x=>x[1]);
-  deck=[...sh(unk),...sh(kn)]; idx=0; revealed=false;
+  deck = rmode==="l" ? sh(pool.filter(c=>STEP[c.id].next)) : [...sh(unk),...sh(kn)]; idx=0; revealed=false;
 }
 function renderReview(){
   if(!deck.length) buildDeck();
   const c=deck[idx], el=$("#review"), poolN=deck.length, kn=deck.filter(x=>known.has(x.id)).length;
-  el.innerHTML=`
+  const modes=`<div class="seg" role="group" aria-label="Tipo de tarjeta"><button data-a="mode-c" aria-pressed="${rmode==="c"}">Conceptos</button><button data-a="mode-l" aria-pressed="${rmode==="l"}">Conexiones</button></div>`;
+  if(rmode==="l"){
+    const s=STEP[c.id], n=byId[s.next];
+    el.innerHTML=`${modes}
+    <div class="progress"><span class="label">Conexión ${idx+1} de ${poolN}${filter?" · "+PIECES[filter].name:""}</span></div>
+    <div class="card" style="${pc(c.p)}">
+      <div class="meta" style="display:flex;gap:8px"><span class="tag">Paso ${s.n}</span><span class="tag">${esc(c.t)}</span></div>
+      <p style="margin:0">${esc(s.idea)}</p>
+      <div class="q">Pero… ${esc(s.but)}</div>
+      ${revealed?`<div style="${pc(n.p)}"><h3 style="font-size:20px;margin-bottom:6px;color:var(--pc)">→ ${esc(n.t)}</h3><p style="margin:0">${esc(STEP[n.id].idea)}</p></div>`
+        :`<p class="count" style="margin:0">¿Qué concepto viene a continuación para resolver este problema?</p>`}
+      <div class="actions">${revealed
+        ?`<button class="btn primary" data-a="skip">Siguiente conexión</button><button class="btn" data-a="thread">Ver en el hilo conductor</button>`
+        :`<button class="btn primary" data-a="show">Mostrar respuesta</button><button class="btn" data-a="skip">Saltar</button>`}</div>
+    </div>
+    <div class="actions"><button class="btn small" data-a="shuffle">Barajar de nuevo</button></div>`;
+    return;
+  }
+  el.innerHTML=`${modes}
     <div class="progress"><span class="label">Tarjeta ${idx+1} de ${poolN}${filter?" · "+PIECES[filter].name:""}</span><span class="count">${kn} de ${poolN} dominadas</span></div>
     <div class="bar"><i style="width:${kn/poolN*100}%;background:var(--good)"></i></div>
     <div class="card" style="${pc(c.p)}">
@@ -957,7 +1149,9 @@ function renderReview(){
 $("#review").addEventListener("click",e=>{
   const a=e.target.closest("[data-a]")?.dataset.a; if(!a) return;
   const c=deck[idx];
-  if(a==="show"){revealed=true}
+  if(a==="mode-c"||a==="mode-l"){rmode=a.slice(-1); buildDeck()}
+  else if(a==="thread"){gotoStep(c.id); return}
+  else if(a==="show"){revealed=true}
   else if(a==="know"){known.add(c.id); store.set("known",[...known]); next()}
   else if(a==="again"){known.delete(c.id); store.set("known",[...known]); next()}
   else if(a==="skip"){next()}
@@ -971,5 +1165,6 @@ document.querySelector('[data-view="repaso"]').addEventListener("click",()=>{bui
 
 /* ---- Inicio ---- */
 renderPieces(); renderList(); renderDetail(); renderLabNav(); openLab(curLab,false); buildDeck(); renderReview();
-const v0=store.get("view","explorar"); if(["explorar","lab","repaso"].includes(v0)) showView(v0);
+renderStory();
+const v0=store.get("view","explorar"); if(["explorar","hilo","lab","repaso"].includes(v0)) showView(v0);
 </script>
