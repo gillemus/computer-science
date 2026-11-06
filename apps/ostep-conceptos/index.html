@@ -250,6 +250,18 @@ table.t td.inv{color:var(--muted)}
 .ptable div.on{background:var(--pers-soft);color:var(--pers);font-weight:600}
 .code div.bad{background:var(--bad-soft);color:var(--bad)}
 
+.two{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:18px}
+.two .opt{border:1px solid var(--line);border-radius:10px;padding:14px 16px;display:grid;gap:10px;align-content:start;min-width:0}
+.two .opt.best{border-color:var(--virt);box-shadow:inset 0 0 0 1px var(--virt)}
+.two h3{font-size:18px}
+.two .opt > p.count{min-height:3em}
+.share{position:relative;display:flex;height:36px;border-radius:6px;overflow:hidden;background:var(--sunk)}
+.share span{display:grid;place-items:center;color:var(--surface);font-family:var(--mono);font-size:13px;font-weight:600;min-width:0;overflow:hidden}
+.share .tgt{position:absolute;top:-4px;bottom:-4px;width:0;border-left:2px dashed var(--ink)}
+.ttl{display:flex;flex-wrap:wrap;gap:2px}
+.ttl i{width:11px;height:16px;border-radius:2px;display:block}
+@media (max-width:820px){.two{grid-template-columns:1fr}}
+
 /* Repaso */
 .review{max-width:680px;margin:0 auto;display:grid;gap:16px}
 .review > .seg{justify-self:start}
@@ -359,12 +371,12 @@ const C = [
   r:["mlfq","proporcional","cambio-contexto"],lab:"sched"},
  {id:"mlfq",p:"virt",t:"Cola multinivel con realimentación (MLFQ)",ch:"8",crux:"¿Cómo minimizar a la vez el tiempo de respuesta de los trabajos interactivos y el de retorno, sin saber de antemano cuánto dura cada trabajo?",
   d:"Varias colas con prioridades distintas; dentro de una misma cola, los trabajos se turnan con Round Robin. Todo trabajo nuevo entra en la cola más alta, como si fuera corto; si agota su asignación de tiempo, baja de cola. Así los trabajos cortos e interactivos terminan pronto y los largos se hunden: MLFQ aproxima a SJF sin conocer duraciones, observando el comportamiento pasado. Periódicamente todos suben a la cola superior para evitar la inanición.",
-  k:["Doble objetivo: buen retorno (como SJF/STCF) y buena respuesta (como RR)","Aproxima a SJF: supone que cada trabajo es corto hasta que demuestra lo contrario","Regla: si A tiene más prioridad que B, se ejecuta A; si es la misma, Round Robin","Los trabajos nuevos entran con la prioridad máxima","El impulso (boost) periódico evita la inanición","Contar el tiempo total consumido impide engañar al planificador"],
-  r:["planificacion","proporcional"]},
+  k:["Doble objetivo: buen retorno (como SJF/STCF) y buena respuesta (como RR)","Aproxima a SJF: supone que cada trabajo es corto hasta que demuestra lo contrario","Regla: si A tiene más prioridad que B, se ejecuta A; si es la misma, Round Robin","Los trabajos nuevos entran con la prioridad máxima","El impulso (boost) periódico evita la inanición","Contar el tiempo total consumido impide engañar al planificador","No reparte la CPU por usuario: quien lanza más procesos recibe más. Para eso se combina con un reparto proporcional"],
+  r:["planificacion","proporcional"],lab:"two"},
  {id:"proporcional",p:"virt",t:"Planificación proporcional (lotería, stride)",ch:"9",crux:"¿Cómo repartir la CPU en proporción a unos pesos?",
-  d:"Cada proceso tiene billetes; en la planificación por lotería se sortea quién se ejecuta. Stride lo hace de forma determinista con un contador de paso. Linux CFS usa un tiempo virtual (vruntime) con una idea parecida.",
-  k:["Los billetes representan la parte de CPU","La aleatoriedad es simple y no guarda estado global","CFS ordena los procesos por vruntime en un árbol rojo-negro"],
-  r:["mlfq","planificacion"]},
+  d:"Cada proceso tiene billetes; en la planificación por lotería se sortea quién se ejecuta. Stride lo hace de forma determinista con un contador de paso. Linux CFS usa un tiempo virtual (vruntime) con una idea parecida. No completa a MLFQ: persigue otro objetivo (repartir la CPU según unos pesos, en vez de optimizar retorno y respuesta), y ambas se pueden combinar en dos niveles.",
+  k:["Los billetes representan la parte de CPU","La aleatoriedad es simple y no guarda estado global","CFS ordena los procesos por vruntime en un árbol rojo-negro","Combinación habitual: Stride o lotería reparten la CPU entre grupos y MLFQ elige el proceso dentro de cada grupo"],
+  r:["mlfq","planificacion"],lab:"two"},
  {id:"espacio-direcciones",p:"virt",t:"Espacio de direcciones",ch:"13",crux:"¿Cómo ofrece el SO a cada proceso una memoria privada, grande y propia?",
   d:"La abstracción de memoria que ve cada proceso: código, montículo (heap) que crece hacia arriba y pila que crece hacia abajo. Todas las direcciones que ve un programa son virtuales.",
   k:["Objetivos: transparencia, eficiencia y protección","malloc/free gestionan el heap (cap. 14)"],
@@ -522,8 +534,8 @@ const ACTS = [
   ["syscall","El trap salta a un manejador que el SO registró en el arranque; el proceso solo elige el número de llamada.","Cada vez que el SO recupera el control, por un trap o por el temporizador, puede elegir pasar a otro proceso. ¿Cómo se hace ese cambio?"],
   ["cambio-contexto","Se guardan los registros del proceso actual y se restauran los del siguiente.","Ya tenemos el mecanismo para cambiar de proceso. Falta la política: decidir a cuál."],
   ["planificacion","SJF y STCF minimizan el tiempo de retorno (FIFO no: sufre el efecto convoy); Round Robin minimiza el de respuesta. Ninguna gana en ambas.","SJF y STCF, las que mejor retorno dan, necesitan saber cuánto durará cada trabajo, y el SO no lo sabe. Round Robin no lo necesita, pero su retorno es malo. ¿Se puede conseguir lo mejor de ambas sin conocer el futuro?"],
-  ["mlfq","MLFQ supone que cada trabajo nuevo es corto y le da la máxima prioridad; si usa mucha CPU, lo baja. Así aproxima a SJF sin conocer duraciones, y con Round Robin dentro de cada cola mantiene buena respuesta.","MLFQ equilibra retorno y respuesta, pero no garantiza a cada usuario una parte concreta de la CPU."],
-  ["proporcional","Billetes de lotería, stride o el vruntime de Linux reparten la CPU según pesos.","La CPU ya está virtualizada. Queda la otra gran pieza del hardware que comparten los procesos: la memoria."]]},
+  ["mlfq","MLFQ supone que cada trabajo nuevo es corto y le da la máxima prioridad; si usa mucha CPU, lo baja. Así aproxima a SJF sin conocer duraciones, y con Round Robin dentro de cada cola mantiene buena respuesta.","MLFQ decide quién va primero para que el sistema rinda, pero no sabe de repartos: quien lanza más procesos recibe más CPU. Si lo que se quiere es repartir la CPU según unos pesos pactados, hace falta otro criterio."],
+  ["proporcional","Billetes de lotería, stride o el vruntime de Linux reparten la CPU según pesos. No viene después de MLFQ para completarla: es otra familia, con otro objetivo (reparto pactado en vez de rendimiento). Se pueden combinar en dos niveles.","La CPU ya está virtualizada. Queda la otra gran pieza del hardware que comparten los procesos: la memoria."]]},
  {id:"mem",p:"virt",t:"Virtualizar la memoria",
   q:"Todos los procesos comparten la misma memoria física, pero cada uno debe creer que tiene una memoria privada, grande y solo para él, sin poder tocar la de los demás.",
   steps:[
@@ -574,6 +586,7 @@ const ACTS = [
 
 /* Ideas que reaparecen en otras partes del libro: [a, b, por qué] */
 const BRIDGES = [
+ ["mlfq","proporcional","Son alternativas con objetivos distintos y se combinan en dos niveles: lotería o Stride reparten la CPU entre grupos (usuarios, contenedores) y, dentro de cada grupo, MLFQ elige el proceso. El reparto entre grupos no depende de cuántos procesos tenga cada uno."],
  ["lde","carrera","La interrupción de temporizador que permite al SO recuperar el control es la misma que puede expulsar a un hilo a mitad de contador++."],
  ["espacio-direcciones","hilos","Los hilos de un proceso comparten un único espacio de direcciones; solo la pila es privada de cada hilo."],
  ["tlb","cambio-contexto","Cada cambio de contexto deja la TLB llena de traducciones de otro proceso; el ASID evita tener que vaciarla."],
@@ -781,6 +794,7 @@ document.querySelector("nav.tabs").addEventListener("click",e=>{const b=e.target
 /* =================== LABORATORIO =================== */
 const LABS = {
   proc:{p:"virt",t:"Shell: fork, exec y wait",s:"Crea, transforma y espera procesos",render:labProc},
+  two:{p:"virt",t:"Planificación en dos niveles",s:"Stride entre grupos + MLFQ dentro",render:labTwo},
   lde:{p:"virt",t:"Ejecución directa limitada",s:"Modo usuario, traps y temporizador",render:labLde},
   sched:{p:"virt",t:"Planificador de CPU",s:"FIFO · SJF · STCF · RR",render:labSched},
   paging:{p:"virt",t:"Traducción con paginación",s:"VPN, PFN y TLB",render:labPaging},
@@ -800,6 +814,74 @@ function openLab(k,switchView=true){
   curLab=k; store.set("lab",k); renderLabNav();
   const host=$("#labhost"); host.innerHTML=""; LABS[k].render(host);
   if(switchView) showView("lab");
+}
+
+/* ---- Planificación en dos niveles ---- */
+function labTwo(host){
+  const T=400, EV=8, BOOST=50, NL=3, SHOW=96;
+  let tk={A:75,L:25}, np={A:1,L:10};
+  host.innerHTML=`<div class="lab" style="${pc("virt")}">
+    <div><div class="label">Capítulos 8 y 9</div><h2>Planificación en dos niveles</h2></div>
+    <p class="intro">Ana y Luis comparten la CPU. Ana tiene derecho a un porcentaje y Luis a otro (sus billetes), pero cada uno puede lanzar los procesos que quiera. Luis tiene además un editor interactivo, que se despierta cada ${EV} instantes y necesita uno. Compara qué pasa con <b>solo MLFQ</b> (que mira procesos) y con <b>dos niveles</b> (Stride reparte entre Ana y Luis, y MLFQ elige proceso dentro de cada uno).</p>
+    <div class="controls">
+      <div class="field"><label class="label" for="tA">Billetes de Ana</label><input type="number" id="tA" min="1" max="100" value="${tk.A}"></div>
+      <div class="field"><label class="label" for="tL">Billetes de Luis</label><input type="number" id="tL" min="1" max="100" value="${tk.L}"></div>
+      <div class="field"><label class="label" for="nA">Procesos de Ana</label><input type="number" id="nA" min="1" max="5" value="${np.A}"></div>
+      <div class="field"><label class="label" for="nL">Procesos de Luis</label><input type="number" id="nL" min="1" max="20" value="${np.L}"></div>
+    </div>
+    <div class="two" id="tw"></div>
+    <div class="legend"><span><i style="background:var(--virt)"></i>Ana</span><span><i style="background:var(--conc)"></i>Luis (cálculo)</span><span><i style="background:var(--pers)"></i>editor de Luis</span><span>Línea discontinua: reparto que corresponde a los billetes</span></div>
+    <div id="twmsg"></div>
+  </div>`;
+  function mkMlfq(ids){
+    const lv={}; ids.forEach(i=>lv[i]=0); const order=ids.slice(); let own=0;
+    // El impulso periódico se cuenta en el tiempo que ese MLFQ ha tenido la CPU.
+    return {
+      pick(ready){ for(let l=0;l<NL;l++){ const c=order.find(i=>lv[i]===l&&ready(i)); if(c) return c } return null },
+      ran(id,full){ order.splice(order.indexOf(id),1); order.push(id); if(full&&lv[id]<NL-1) lv[id]++;
+        if(++own%BOOST===0) order.forEach(i=>lv[i]=0) }
+    };
+  }
+  function sim(mode){
+    const A=[...Array(np.A)].map((_,i)=>"A"+(i+1)), L=[...Array(np.L)].map((_,i)=>"L"+(i+1)).concat("E");
+    const E={ready:false,since:0}, ready=id=>id!=="E"||E.ready;
+    const one=mode==="one"?mkMlfq(A.concat(L)):null, mA=mode==="two"?mkMlfq(A):null, mL=mode==="two"?mkMlfq(L):null;
+    const pass={A:0,L:0}, stride={A:10000/tk.A,L:10000/tk.L};
+    const cnt={A:0,L:0}, tl=[], resp=[];
+    for(let t=0;t<T;t++){
+      if(t%EV===0&&!E.ready){E.ready=true;E.since=t}
+      let q=one, id;
+      if(one) id=one.pick(ready);
+      else { const g=pass.A<=pass.L?"A":"L"; pass[g]+=stride[g]; q=g==="A"?mA:mL; id=q.pick(ready) }
+      const g=id[0]==="A"?"A":"L"; cnt[g]++;
+      let full=true;
+      if(id==="E"){ resp.push(t-E.since); E.ready=false; full=false }
+      q.ran(id,full); tl.push(id==="E"?"E":g);
+    }
+    return {sA:cnt.A/T,sL:cnt.L/T,tl,avg:resp.length?resp.reduce((a,b)=>a+b,0)/resp.length:null,max:resp.length?Math.max(...resp):null};
+  }
+  const pct=x=>Math.round(x*100)+" %";
+  function card(title,sub,r,target,best){
+    const col={A:"var(--virt)",L:"var(--conc)",E:"var(--pers)"};
+    return `<div class="opt${best?" best":""}"><h3>${title}</h3><p class="count" style="margin:0">${sub}</p>
+      <div class="share" role="img" aria-label="Ana ${pct(r.sA)}, Luis ${pct(r.sL)}"><span style="width:${r.sA*100}%;background:var(--virt)">${r.sA>.08?"Ana "+pct(r.sA):""}</span><span style="width:${r.sL*100}%;background:var(--conc)">${r.sL>.08?"Luis "+pct(r.sL):""}</span><div class="tgt" style="left:${target*100}%"></div></div>
+      <div class="stats"><div class="stat"><span class="label">Ana recibe</span><b>${pct(r.sA)}</b></div><div class="stat"><span class="label">Respuesta del editor</span><b>${r.avg===null?"—":r.avg.toFixed(1)}</b><span class="count">media · máx. ${r.max??"—"}</span></div></div>
+      <div><div class="label" style="margin-bottom:4px">Primeros ${SHOW} instantes</div><div class="ttl">${r.tl.slice(0,SHOW).map(x=>`<i style="background:${col[x]}" title="${x==="E"?"editor":x==="A"?"Ana":"Luis"}"></i>`).join("")}</div></div></div>`;
+  }
+  function draw(){
+    const target=tk.A/(tk.A+tk.L), a=sim("one"), b=sim("two");
+    host.querySelector("#tw").innerHTML=card("Solo MLFQ","Todos los procesos en un mismo planificador. No sabe quién es Ana ni quién es Luis.",a,target,false)
+      +card("Dos niveles: Stride + MLFQ","Stride elige entre Ana y Luis según sus billetes; MLFQ elige el proceso dentro del elegido.",b,target,true);
+    const nTot=np.A+np.L+1;
+    host.querySelector("#twmsg").innerHTML=`<div class="result ok">Ana debería recibir el ${pct(target)} y con solo MLFQ recibe el <b>${pct(a.sA)}</b>: ${np.A} de ${nTot} procesos. Con dos niveles recibe el <b>${pct(b.sA)}</b>, aunque Luis lance ${np.L} proceso${np.L>1?"s":""}.</div>
+      <p class="explain" style="margin-top:10px">El editor de Luis responde en ${b.avg===null?"—":b.avg.toFixed(1)} instantes de media con dos niveles y en ${a.avg===null?"—":a.avg.toFixed(1)} con solo MLFQ. Con dos niveles, antes de que MLFQ lo elija, el grupo de Luis tiene que ganar el reparto, así que la respuesta puede empeorar. A cambio, el reparto ya no se rompe lanzando procesos. Prueba a poner 1 proceso a Luis, o a darle más billetes que a Ana.</p>`;
+  }
+  ["tA","tL","nA","nL"].forEach(id=>host.querySelector("#"+id).addEventListener("input",e=>{
+    const v=parseInt(e.target.value); if(!v) return;
+    const lim={tA:[1,100],tL:[1,100],nA:[1,5],nL:[1,20]}[id], x=Math.max(lim[0],Math.min(lim[1],v));
+    ({tA:()=>tk.A=x,tL:()=>tk.L=x,nA:()=>np.A=x,nL:()=>np.L=x})[id](); draw();
+  }));
+  draw();
 }
 
 /* ---- Ejecución directa limitada ---- */
